@@ -55,7 +55,7 @@ def analyze_webpage(content, url):
     あなたはウェブユーザビリティの専門家です。
     以下のURLのウェブページ内容を正確に読み取り、下記のチェックリストに基づいて、
     改善点をできるだけやさしい日本語で表形式で出力してください（理由の説明は不要です）。
-    さらに、改善後のウェブサイトのHTMLモックを生成してください。
+    さらに、改善後のウェブページ案をテキストデータとしてフルで出力してください（HTMLモックではなく、どのような構成・内容にするかを日本語で詳細に記述してください）。
     
     出力例：
     【改善点（表形式）】
@@ -64,8 +64,8 @@ def analyze_webpage(content, url):
     | ナビゲーションの明確さ | 例：メニューが分かりづらいので、上部に目立つメニューを設置しましょう |
     ...
     
-    【改善後のHTMLモック】
-    <html>...</html>
+    【改善後のページ案】
+    （ここに日本語で詳細なページ案を記述）
     
     # チェックリスト
     {CHECKLIST}
@@ -98,18 +98,19 @@ if st.button("分析開始"):
                 analysis = analyze_webpage(content, url)
                 if analysis:
                     import re
-                    html_mock = None
-                    m = re.search(r'【改善後のHTMLモック】\s*([\s\S]+?)(?=\n\s*【|$)', analysis)
-                    if m:
-                        html_mock = m.group(1).strip()
                     st.subheader("分析結果")
                     table_match = re.search(r'【改善点（表形式）】([\s\S]+?)(?=\n\s*【|$)', analysis)
                     if table_match:
                         st.markdown(table_match.group(1))
                     else:
                         st.write(analysis)
-                    if html_mock:
-                        st.subheader("改善後のHTMLモック（参考表示）")
-                        st.code(html_mock, language="html")
+                    # 改善後のページ案を表示
+                    page_plan_match = re.search(r'【改善後のページ案】([\s\S]+)', analysis)
+                    if page_plan_match:
+                        st.subheader("改善後のページ案")
+                        st.write(page_plan_match.group(1).strip())
     else:
-        st.warning("URLを入力してください。") 
+        st.warning("URLを入力してください。")
+
+# フッターに「氷解社が作成」と記載
+st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">このアプリは氷解社が作成しています</div>', unsafe_allow_html=True) 
