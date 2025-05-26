@@ -10,7 +10,7 @@ load_dotenv()
 
 # Gemini APIの設定
 genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
-model = genai.GenerativeModel('gemini-1.0-pro')
+model = genai.GenerativeModel('gemini-pro')
 
 # チェックリストの定義
 CHECKLIST = """
