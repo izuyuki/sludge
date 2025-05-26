@@ -9,7 +9,22 @@ import os
 load_dotenv()
 
 # Gemini APIの設定
-genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
+api_key = os.getenv('GOOGLE_API_KEY')
+if not api_key:
+    st.error("GOOGLE_API_KEYが設定されていません。.envファイルを確認してください。")
+    st.stop()
+
+genai.configure(api_key=api_key)
+
+# 利用可能なモデルを確認
+try:
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            st.write(f"利用可能なモデル: {m.name}")
+except Exception as e:
+    st.error(f"モデル一覧の取得に失敗しました: {str(e)}")
+
+# モデルの設定
 model = genai.GenerativeModel('gemini-pro')
 
 # チェックリストの定義
@@ -51,6 +66,7 @@ def analyze_webpage(content):
         return response.text
     except Exception as e:
         st.error(f"Gemini APIでエラーが発生しました: {str(e)}")
+        st.error("APIキーが正しく設定されているか確認してください。")
         return None
 
 # Streamlit UI
