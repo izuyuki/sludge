@@ -4,6 +4,8 @@ from bs4 import BeautifulSoup
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
+from io import BytesIO
+from xhtml2pdf import pisa
 
 # 環境変数の読み込み
 load_dotenv()
@@ -49,20 +51,31 @@ def get_webpage_content(url):
         st.error(f"エラーが発生しました: {str(e)}")
         return None
 
+# --- PDF出力用関数 ---
+def html_to_pdf(html_content):
+    pdf = BytesIO()
+    pisa_status = pisa.CreatePDF(html_content, dest=pdf)
+    if pisa_status.err:
+        return None
+    return pdf.getvalue()
+
+# --- Geminiプロンプト ---
 def analyze_webpage(content, url):
     prompt = f"""
     あなたはウェブユーザビリティの専門家です。
-    以下のURLのウェブページ内容を正確に読み取り、下記のチェックリストに基づいて分析してください。
-    出力は必ず以下の構造で日本語で記述してください：
+    以下のURLのウェブページ内容を正確に読み取り、下記のチェックリストに基づいて、
+    改善点をできるだけやさしい日本語で表形式で出力してください（理由の説明は不要です）。
+    さらに、改善後のウェブサイトのHTMLモックを生成してください。
     
-    【改善点】
-    箇条書きで具体的な改善点を列挙してください。
+    出力例：
+    【改善点（表形式）】
+    | チェック項目 | フィードバック |
+    |---|---|
+    | ナビゲーションの明確さ | 例：メニューが分かりづらいので、上部に目立つメニューを設置しましょう |
+    ...
     
-    【理由】
-    各改善点について、なぜその改善が必要なのか理由を説明してください。
-    
-    【改善後の構成案】
-    改善後のページ構成案を、箇条書きまたはテキストで具体的に提案してください。
+    【改善後のHTMLモック】
+    <html>...</html>
     
     # チェックリスト
     {CHECKLIST}
@@ -82,7 +95,7 @@ def analyze_webpage(content, url):
         return None
 
 # Streamlit UI
-st.title("ウェブページ改善提案アプリ")
+st.title("スラッジ・ファインダー")
 st.write("URLを入力して、ウェブページの改善点を確認しましょう。")
 
 url = st.text_input("ウェブページのURLを入力してください：")
@@ -94,7 +107,31 @@ if st.button("分析開始"):
             if content:
                 analysis = analyze_webpage(content, url)
                 if analysis:
+                    # 分析結果からHTMLモック部分を抽出
+                    import re
+                    html_mock = None
+                    m = re.search(r'【改善後のHTMLモック】\s*([\s\S]+?)(?=\n\s*【|$)', analysis)
+                    if m:
+                        html_mock = m.group(1).strip()
                     st.subheader("分析結果")
-                    st.write(analysis)
+                    # 改善点（表形式）部分のみ表示
+                    table_match = re.search(r'【改善点（表形式）】([\s\S]+?)(?=\n\s*【|$)', analysis)
+                    if table_match:
+                        st.markdown(table_match.group(1))
+                    else:
+                        st.write(analysis)
+                    # PDF出力ボタン
+                    if html_mock:
+                        if st.button("改善後HTMLをPDFでダウンロード"):
+                            pdf_bytes = html_to_pdf(html_mock)
+                            if pdf_bytes:
+                                st.download_button(
+                                    label="PDFをダウンロード",
+                                    data=pdf_bytes,
+                                    file_name="improved_mock.pdf",
+                                    mime="application/pdf"
+                                )
+                            else:
+                                st.error("PDF生成に失敗しました")
     else:
         st.warning("URLを入力してください。") 
