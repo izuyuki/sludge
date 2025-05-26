@@ -85,6 +85,7 @@ def analyze_webpage(content, url):
         return None
 
 # Streamlit UI
+st.image("water_logo.png", width=120)  # 幅はお好みで調整
 st.title("スラッジ・ファインダー")
 st.write("URLを入力して、ウェブページの改善点を確認しましょう。")
 
