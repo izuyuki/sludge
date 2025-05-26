@@ -52,12 +52,12 @@ def get_webpage_content(url):
 # --- Geminiプロンプト ---
 def analyze_webpage(content, url):
     prompt = f"""
-    あなたはウェブユーザビリティの専門家です。
+    あなたは行動科学の専門家です。
     以下の手順で作業してください：
     1. ユーザーが入力したURLのウェブサイト内容を正確に理解してください。
-    2. 利用者が見にくい点を踏まえ、内容や趣旨は維持したまま、構成や文面を修正してください。
+    2. わかりづらい点を大きく修正するのではなく、行動科学の観点から利用者の行動を後押しするような微修正のみを行ってください（例：行動を促す表現への言い換え、選択肢の提示順序の工夫、注目を集めるための小さな強調など）。内容や趣旨は必ず維持してください。
     3. 修正したものをテキストデータで出力してください（HTMLではなく、見出し・本文・箇条書き・表などを適切に使い、すぐにコピペして使える日本語で）。
-    4. 修正したポイントを表形式でまとめてください。
+    4. 修正ポイントを表形式で1回だけまとめてください。
     
     ※内容や趣旨は必ず維持し、情報の追加や削除、想像による追記は行わないでください。
     
@@ -66,9 +66,9 @@ def analyze_webpage(content, url):
     ...（ここに修正後のテキスト）...
     
     【修正ポイント（表形式）】
-    | 修正箇所 | 修正内容 |
+    | 修正箇所 | 微修正内容 |
     |---|---|
-    | 見出し | 例：より分かりやすい表現に変更 |
+    | 見出し | 例：行動を促す表現に微修正 |
     ...
     
     # 対象ページURL
@@ -101,16 +101,16 @@ if st.button("分析開始"):
                 if analysis:
                     import re
                     st.subheader("分析結果")
-                    table_match = re.search(r'【修正ポイント（表形式）】([\s\S]+?)(?=\n\s*【|$)', analysis)
-                    if table_match:
-                        st.markdown(table_match.group(1))
-                    else:
-                        st.write(analysis)
-                    # 改善後のページ案を表示
-                    page_plan_match = re.search(r'【修正版テキスト】([\s\S]+)', analysis)
+                    # 修正版テキスト
+                    page_plan_match = re.search(r'【修正版テキスト】([\s\S]+?)(?=\n\s*【|$)', analysis)
                     if page_plan_match:
                         st.subheader("修正版テキスト")
                         st.write(page_plan_match.group(1).strip())
+                    # 修正ポイント（表形式）は1回だけ表示
+                    table_match = re.search(r'【修正ポイント（表形式）】([\s\S]+?)(?=\n\s*【|$)', analysis)
+                    if table_match:
+                        st.subheader("修正ポイント（表形式）")
+                        st.markdown(table_match.group(1))
     else:
         st.warning("URLを入力してください。")
 
