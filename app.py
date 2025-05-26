@@ -25,7 +25,7 @@ except Exception as e:
     st.error(f"モデル一覧の取得に失敗しました: {str(e)}")
 
 # モデルの設定
-model = genai.GenerativeModel('gemini-pro')
+model = genai.GenerativeModel('models/gemini-1.5-pro-latest')
 
 # チェックリストの定義
 CHECKLIST = """
