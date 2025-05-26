@@ -1,0 +1,72 @@
+import streamlit as st
+import requests
+from bs4 import BeautifulSoup
+import google.generativeai as genai
+from dotenv import load_dotenv
+import os
+
+# 環境変数の読み込み
+load_dotenv()
+
+# Gemini APIの設定
+genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
+model = genai.GenerativeModel('gemini-pro')
+
+# チェックリストの定義
+CHECKLIST = """
+ナビゲーションの明確さ: ユーザーが目的の情報に迅速にアクセスできるよう、直感的なナビゲーションが設計されていますか？
+情報の整理: 重要な情報が目立つように配置され、ユーザーが容易に見つけられるようになっていますか？
+視覚的要素の一貫性: アイコンや色使いが一貫しており、情報の重要度やカテゴリーが視覚的に区別されていますか？
+テキストの構造: 長文が適切に分割され、見出しや箇条書きを用いて読みやすくなっていますか？
+空白の活用: 適切な余白が設けられ、情報が詰め込みすぎず、視認性が確保されていますか？
+平易な言葉の使用: 専門用語や法律用語を避け、誰にでも理解しやすい言葉で書かれていますか？
+一貫した用語の使用: 同じ概念や項目について、異なる用語が使われていませんか？
+用語の定義: 必要に応じて、難解な用語や略語に対する説明や定義が提供されていますか？
+"""
+
+def get_webpage_content(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        return soup.get_text()
+    except Exception as e:
+        st.error(f"エラーが発生しました: {str(e)}")
+        return None
+
+def analyze_webpage(content):
+    prompt = f"""
+    以下のウェブページの内容を分析し、以下のチェックリストに基づいて改善点を指摘してください。
+    その後、改善したウェブページの案をテキストデータで出力してください。
+
+    チェックリスト:
+    {CHECKLIST}
+
+    ウェブページの内容:
+    {content}
+    """
+    
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"Gemini APIでエラーが発生しました: {str(e)}")
+        return None
+
+# Streamlit UI
+st.title("ウェブページ改善提案アプリ")
+st.write("URLを入力して、ウェブページの改善点を確認しましょう。")
+
+url = st.text_input("ウェブページのURLを入力してください：")
+
+if st.button("分析開始"):
+    if url:
+        with st.spinner("ウェブページを分析中..."):
+            content = get_webpage_content(url)
+            if content:
+                analysis = analyze_webpage(content)
+                if analysis:
+                    st.subheader("分析結果")
+                    st.write(analysis)
+    else:
+        st.warning("URLを入力してください。") 
