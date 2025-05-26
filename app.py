@@ -20,7 +20,7 @@ genai.configure(api_key=api_key)
 try:
     for m in genai.list_models():
         if 'generateContent' in m.supported_generation_methods:
-            st.write(f"利用可能なモデル: {m.name}")
+            pass  # 何も表示しない
 except Exception as e:
     st.error(f"モデル一覧の取得に失敗しました: {str(e)}")
 
