@@ -49,18 +49,30 @@ def get_webpage_content(url):
         st.error(f"エラーが発生しました: {str(e)}")
         return None
 
-def analyze_webpage(content):
+def analyze_webpage(content, url):
     prompt = f"""
-    以下のウェブページの内容を分析し、以下のチェックリストに基づいて改善点を指摘してください。
-    その後、改善したウェブページの案をテキストデータで出力してください。
-
-    チェックリスト:
+    あなたはウェブユーザビリティの専門家です。
+    以下のURLのウェブページ内容を正確に読み取り、下記のチェックリストに基づいて分析してください。
+    出力は必ず以下の構造で日本語で記述してください：
+    
+    【改善点】
+    箇条書きで具体的な改善点を列挙してください。
+    
+    【理由】
+    各改善点について、なぜその改善が必要なのか理由を説明してください。
+    
+    【改善後の構成案】
+    改善後のページ構成案を、箇条書きまたはテキストで具体的に提案してください。
+    
+    # チェックリスト
     {CHECKLIST}
-
-    ウェブページの内容:
+    
+    # 対象ページURL
+    {url}
+    
+    # ページ内容
     {content}
     """
-    
     try:
         response = model.generate_content(prompt)
         return response.text
@@ -80,7 +92,7 @@ if st.button("分析開始"):
         with st.spinner("ウェブページを分析中..."):
             content = get_webpage_content(url)
             if content:
-                analysis = analyze_webpage(content)
+                analysis = analyze_webpage(content, url)
                 if analysis:
                     st.subheader("分析結果")
                     st.write(analysis)
