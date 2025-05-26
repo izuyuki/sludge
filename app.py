@@ -4,8 +4,6 @@ from bs4 import BeautifulSoup
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
-from io import BytesIO
-from xhtml2pdf import pisa
 
 # 環境変数の読み込み
 load_dotenv()
@@ -50,14 +48,6 @@ def get_webpage_content(url):
     except Exception as e:
         st.error(f"エラーが発生しました: {str(e)}")
         return None
-
-# --- PDF出力用関数 ---
-def html_to_pdf(html_content):
-    pdf = BytesIO()
-    pisa_status = pisa.CreatePDF(html_content, dest=pdf)
-    if pisa_status.err:
-        return None
-    return pdf.getvalue()
 
 # --- Geminiプロンプト ---
 def analyze_webpage(content, url):
@@ -107,31 +97,19 @@ if st.button("分析開始"):
             if content:
                 analysis = analyze_webpage(content, url)
                 if analysis:
-                    # 分析結果からHTMLモック部分を抽出
                     import re
                     html_mock = None
                     m = re.search(r'【改善後のHTMLモック】\s*([\s\S]+?)(?=\n\s*【|$)', analysis)
                     if m:
                         html_mock = m.group(1).strip()
                     st.subheader("分析結果")
-                    # 改善点（表形式）部分のみ表示
                     table_match = re.search(r'【改善点（表形式）】([\s\S]+?)(?=\n\s*【|$)', analysis)
                     if table_match:
                         st.markdown(table_match.group(1))
                     else:
                         st.write(analysis)
-                    # PDF出力ボタン
                     if html_mock:
-                        if st.button("改善後HTMLをPDFでダウンロード"):
-                            pdf_bytes = html_to_pdf(html_mock)
-                            if pdf_bytes:
-                                st.download_button(
-                                    label="PDFをダウンロード",
-                                    data=pdf_bytes,
-                                    file_name="improved_mock.pdf",
-                                    mime="application/pdf"
-                                )
-                            else:
-                                st.error("PDF生成に失敗しました")
+                        st.subheader("改善後のHTMLモック（参考表示）")
+                        st.code(html_mock, language="html")
     else:
         st.warning("URLを入力してください。") 
