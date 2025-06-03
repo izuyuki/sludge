@@ -1,9 +1,11 @@
 import streamlit as st
-import requests
-from bs4 import BeautifulSoup
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
+import PyPDF2
+import io
+import requests
+from bs4 import BeautifulSoup
 
 # 環境変数の読み込み
 load_dotenv()
@@ -16,103 +18,193 @@ if not api_key:
 
 genai.configure(api_key=api_key)
 
-# 利用可能なモデルを確認
-try:
-    for m in genai.list_models():
-        if 'generateContent' in m.supported_generation_methods:
-            pass  # 何も表示しない
-except Exception as e:
-    st.error(f"モデル一覧の取得に失敗しました: {str(e)}")
-
 # モデルの設定
 model = genai.GenerativeModel('models/gemini-1.5-pro-latest')
 
-# チェックリストの定義
-CHECKLIST = """
-ナビゲーションの明確さ: ユーザーが目的の情報に迅速にアクセスできるよう、直感的なナビゲーションが設計されていますか？
-情報の整理: 重要な情報が目立つように配置され、ユーザーが容易に見つけられるようになっていますか？
-視覚的要素の一貫性: アイコンや色使いが一貫しており、情報の重要度やカテゴリーが視覚的に区別されていますか？
-テキストの構造: 長文が適切に分割され、見出しや箇条書きを用いて読みやすくなっていますか？
-空白の活用: 適切な余白が設けられ、情報が詰め込みすぎず、視認性が確保されていますか？
-平易な言葉の使用: 専門用語や法律用語を避け、誰にでも理解しやすい言葉で書かれていますか？
-一貫した用語の使用: 同じ概念や項目について、異なる用語が使われていませんか？
-用語の定義: 必要に応じて、難解な用語や略語に対する説明や定義が提供されていますか？
-"""
-
-def get_webpage_content(url):
+def extract_text_from_pdf(pdf_file):
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
-        return soup.get_text()
+        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+        return text
     except Exception as e:
-        st.error(f"エラーが発生しました: {str(e)}")
+        st.error(f"PDFの読み込みに失敗しました: {str(e)}")
         return None
 
-# --- Geminiプロンプト ---
-def analyze_webpage(content, url):
+def search_related_info(text):
+    # ここでGeminiを使用して関連情報を検索
     prompt = f"""
-    あなたは情報デザインのエキスパートです。
-    以下の手順で作業してください：
-    1. ユーザーが入力したURLのウェブサイト内容を正確に理解してください。
-    2. 全体を構造化し、動作指示を明確にし、わかりにくい表現を利用者にやさしく修正してください。内容に新たな情報は加えないでください。
-    3. 修正したものをテキストデータで出力してください（HTMLではなく、見出し・本文・箇条書き・表などを適切に使い、すぐにコピペして使える日本語で）。
-    4. 修正ポイントを表形式で1回だけまとめてください。
-    
-    ※内容や趣旨は必ず維持し、情報の追加や削除、想像による追記は行わないでください。
-    
-    出力例：
-    【修正版テキスト】
-    ...（ここに修正後のテキスト）...
-    
-    【修正ポイント（表形式）】
-    | 修正箇所 | 微修正内容 |
-    |---|---|
-    | 見出し | 例：動作指示を明確に、やさしい表現に修正 |
-    ...
-    
-    # 対象ページURL
-    {url}
-    
-    # ページ内容
-    {content}
+    以下の行政文書の内容に関連する情報を検索し、重要な情報を抽出してください：
+    {text}
     """
     try:
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        st.error(f"Gemini APIでエラーが発生しました: {str(e)}")
-        st.error("APIキーが正しく設定されているか確認してください。")
+        st.error(f"関連情報の検索に失敗しました: {str(e)}")
+        return None
+
+def analyze_persona(text, related_info):
+    prompt = f"""
+    以下の行政文書と関連情報を分析し、想定されるペルソナを特定してください：
+    
+    文書内容：
+    {text}
+    
+    関連情報：
+    {related_info}
+    
+    以下の形式で出力してください：
+    1. 主要なペルソナの特徴
+    2. 想定される年齢層
+    3. 想定される生活状況
+    4. 想定される課題やニーズ
+    """
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"ペルソナ分析に失敗しました: {str(e)}")
+        return None
+
+def analyze_target_action(text, persona):
+    prompt = f"""
+    以下の行政文書とペルソナ情報を分析し、促したい行動を特定してください：
+    
+    文書内容：
+    {text}
+    
+    ペルソナ情報：
+    {persona}
+    
+    以下の形式で出力してください：
+    1. 主要な目標行動
+    2. 期待される結果
+    3. 行動の重要性
+    """
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"目標行動の分析に失敗しました: {str(e)}")
+        return None
+
+def create_action_process_map(text, target_action):
+    prompt = f"""
+    以下の情報を基に、行動プロセスマップを作成してください：
+    
+    文書内容：
+    {text}
+    
+    目標行動：
+    {target_action}
+    
+    以下の形式で出力してください：
+    1. 行動プロセスの各ステップ
+    2. 各ステップでの必要な情報
+    3. 文書との接点
+    4. 想定される摩擦点
+    """
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"行動プロセスマップの作成に失敗しました: {str(e)}")
+        return None
+
+def analyze_east_framework(text, process_map):
+    prompt = f"""
+    EASTフレームワークの観点から、以下の情報を分析してください：
+    
+    文書内容：
+    {text}
+    
+    行動プロセスマップ：
+    {process_map}
+    
+    以下の観点で分析してください：
+    1. Easy（簡単さ）
+       - 5W1Hの明確性
+       - 情報の簡潔さ
+       - 理解のしやすさ
+    2. Attractive（魅力的さ）
+       - デザインの適切性
+       - 情報の整理
+    3. Social（社会的）
+       - 社会的影響
+       - コミュニティの関与
+    4. Timely（タイミング）
+       - 情報提供の適切な時期
+       - 行動のタイミング
+    """
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"EASTフレームワーク分析に失敗しました: {str(e)}")
+        return None
+
+def generate_improvement_suggestions(text, east_analysis):
+    prompt = f"""
+    以下の分析結果を基に、文書の改善案を提案してください：
+    
+    原文書：
+    {text}
+    
+    EAST分析：
+    {east_analysis}
+    
+    以下の形式で出力してください：
+    1. 改善のポイント
+    2. 具体的な改善案
+    3. 期待される効果
+    """
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"改善案の生成に失敗しました: {str(e)}")
         return None
 
 # Streamlit UI
-st.image("water_logo.png", width=120)  # 幅はお好みで調整
-st.title("スラッジ・ファインダー")
-st.write("URLを入力して、ウェブページの改善点を確認しましょう。")
+st.title("行政情報媒体改善アシスタント")
+st.write("PDFファイルをアップロードして、行政情報媒体の改善点を分析しましょう。")
 
-url = st.text_input("ウェブページのURLを入力してください：")
+uploaded_file = st.file_uploader("PDFファイルをアップロードしてください", type=['pdf'])
 
-if st.button("分析開始"):
-    if url:
-        with st.spinner("ウェブページを分析中..."):
-            content = get_webpage_content(url)
-            if content:
-                analysis = analyze_webpage(content, url)
-                if analysis:
-                    import re
-                    st.subheader("分析結果")
-                    # 修正版テキスト
-                    page_plan_match = re.search(r'【修正版テキスト】([\s\S]+?)(?=\n\s*【|$)', analysis)
-                    if page_plan_match:
-                        st.subheader("修正版テキスト")
-                        st.write(page_plan_match.group(1).strip())
-                    # 修正ポイント（表形式）は1回だけ表示
-                    table_match = re.search(r'【修正ポイント（表形式）】([\s\S]+?)(?=\n\s*【|$)', analysis)
-                    if table_match:
-                        st.subheader("修正ポイント（表形式）")
-                        st.markdown(table_match.group(1))
-    else:
-        st.warning("URLを入力してください。")
+if uploaded_file is not None:
+    with st.spinner("分析中..."):
+        # PDFからテキストを抽出
+        text = extract_text_from_pdf(uploaded_file)
+        if text:
+            # 関連情報の検索
+            related_info = search_related_info(text)
+            
+            # ペルソナ分析
+            persona = analyze_persona(text, related_info)
+            st.subheader("想定されるペルソナ")
+            st.write(persona)
+            
+            # 目標行動の分析
+            target_action = analyze_target_action(text, persona)
+            st.subheader("促したい行動")
+            st.write(target_action)
+            
+            # 行動プロセスマップの作成
+            process_map = create_action_process_map(text, target_action)
+            st.subheader("行動プロセスマップ")
+            st.write(process_map)
+            
+            # EASTフレームワーク分析
+            east_analysis = analyze_east_framework(text, process_map)
+            st.subheader("EASTフレームワーク分析")
+            st.write(east_analysis)
+            
+            # 改善案の生成
+            improvements = generate_improvement_suggestions(text, east_analysis)
+            st.subheader("改善案")
+            st.write(improvements)
 
-# フッターに「氷解社が作成」と記載
+# フッター
 st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">このアプリは氷解社が作成しています</div>', unsafe_allow_html=True) 
