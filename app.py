@@ -119,7 +119,7 @@ def create_action_process_map(text, target_action):
 
 def analyze_east_framework(text, process_map):
     prompt = f"""
-    EASTフレームワークの観点から、以下の情報を分析してください：
+    行動科学の観点から、特にEasy（簡単さ）に特化して、以下の情報を分析してください：
     
     文書内容：
     {text}
@@ -128,25 +128,15 @@ def analyze_east_framework(text, process_map):
     {process_map}
     
     以下の観点で分析してください：
-    1. Easy（簡単さ）
-       - 5W1Hの明確性
-       - 情報の簡潔さ
-       - 理解のしやすさ
-    2. Attractive（魅力的さ）
-       - デザインの適切性
-       - 情報の整理
-    3. Social（社会的）
-       - 社会的影響
-       - コミュニティの関与
-    4. Timely（タイミング）
-       - 情報提供の適切な時期
-       - 行動のタイミング
+    1. 情報の簡潔さ
+    2. 情報の整理
+    3. 動作指示の明確性（ターゲット、行動プロセスマップを踏まえ、いつ、どこで、誰が、どのように）
     """
     try:
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        st.error(f"EASTフレームワーク分析に失敗しました: {str(e)}")
+        st.error(f"行動科学分析に失敗しました: {str(e)}")
         return None
 
 def generate_improvement_suggestions(text, east_analysis):
@@ -156,10 +146,15 @@ def generate_improvement_suggestions(text, east_analysis):
     原文書：
     {text}
     
-    EAST分析：
+    行動科学分析：
     {east_analysis}
     
-    以下の形式で出力してください：
+    以下の観点を踏まえ、改善のポイントと具体的な改善案のうち、重要なもの5つを厳選して出力してください。
+    1. 情報の簡潔さ
+    2. 情報の整理
+    3. 動作指示の明確性（ターゲット、行動プロセスマップを踏まえ、いつ、どこで、誰が、どのように）
+    
+    出力形式：
     1. 改善のポイント
     2. 具体的な改善案
     3. 期待される効果
