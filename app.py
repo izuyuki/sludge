@@ -98,17 +98,12 @@ def create_action_process_map(text, target_action):
     目標行動：
     {target_action}
     
-    以下の形式でJSONリストとして出力してください。
-    各要素は以下の4つのキーを持ちます：
-    - step: ステップ名（文書に至るまでのプロセスも含めてください）
-    - info: そのステップで必要な情報
-    - friction: 想定される摩擦
-    - level: アップロードした文書との接点の強さ（"strong"、"medium"、"weak" のいずれか）
-    例：
-    [
-      {"step": "研修ニーズの把握", "info": "住民サービス向上ニーズ", "friction": "現状の課題が明確になっていない", "level": "weak"},
-      ...
-    ]
+    以下の形式でMarkdown表を作成してください。
+    | ステップ | 必要な情報 | 想定される摩擦 | 接点 |
+    |---------|------------|----------------|------|
+    
+    接点が強い部分には「◎」、中程度には「○」、弱い部分には「△」の印を接点列に記載してください。
+    各セルは簡潔に箇条書きで記載してください。
     """
     try:
         response = model.generate_content(prompt)
@@ -211,30 +206,13 @@ if uploaded_file is not None:
             st.write(target_action)
             
             # 行動プロセスマップの作成
-            process_map_json = create_action_process_map(text, target_action)
+            process_map = create_action_process_map(text, target_action)
             st.subheader("行動プロセスマップ")
-            try:
-                process_map = json.loads(process_map_json)
-                color_map = {"strong": "#0066cc", "medium": "#66b3ff", "weak": "#cce6ff"}
-                font_color_map = {"strong": "white", "medium": "white", "weak": "black"}
-                html = "<table style='width:100%; border-collapse:collapse;'>"
-                html += "<tr><th>ステップ</th><th>必要な情報</th><th>想定される摩擦</th></tr>"
-                for row in process_map:
-                    bg = color_map.get(row.get("level", "weak"), "#cce6ff")
-                    fc = font_color_map.get(row.get("level", "weak"), "black")
-                    html += f"<tr>"
-                    html += f"<td style='background:{bg}; color:{fc}; padding:8px; border:1px solid #ccc'>{row.get('step','')}</td>"
-                    html += f"<td style='background:{bg}; color:{fc}; padding:8px; border:1px solid #ccc'>{row.get('info','')}</td>"
-                    html += f"<td style='background:{bg}; color:{fc}; padding:8px; border:1px solid #ccc'>{row.get('friction','')}</td>"
-                    html += f"</tr>"
-                html += "</table>"
-                st.markdown(html, unsafe_allow_html=True)
-            except Exception as e:
-                st.write(process_map_json)
+            st.markdown(process_map)
             
-            # EASTフレームワーク分析
-            east_analysis = analyze_east_framework(text, process_map_json)
-            st.subheader("EASTフレームワーク分析")
+            # 行動科学分析
+            east_analysis = analyze_east_framework(text, process_map)
+            st.subheader("行動科学分析")
             st.write(east_analysis)
             
             # 改善案の生成
