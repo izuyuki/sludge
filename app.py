@@ -56,11 +56,13 @@ def analyze_persona(text, related_info):
     関連情報：
     {related_info}
     
-    以下の形式で、各項目100字程度で簡潔に出力してください：
-    1. 主要なペルソナの特徴
-    2. 想定される年齢層
-    3. 想定される生活状況
-    4. 想定される課題やニーズ
+    以下の4項目について、各100字程度で簡潔にまとめ、Markdown表（| 項目 | 内容 |）で出力してください。
+    | 項目 | 内容 |
+    |------|------|
+    | 1. 主要なペルソナの特徴 |  |
+    | 2. 想定される年齢層 |  |
+    | 3. 想定される生活状況 |  |
+    | 4. 想定される課題やニーズ |  |
     """
     try:
         response = model.generate_content(prompt)
@@ -124,10 +126,12 @@ def analyze_east_framework(text, process_map):
     行動プロセスマップ：
     {process_map}
     
-    以下の観点で分析してください：
-    1. 情報の簡潔さ
-    2. 情報の整理
-    3. 動作指示の明確性（いつ、どこで、誰が、どのように）
+    以下の3観点について、Markdown表（| 観点 | 分析内容 |）で出力してください。
+    | 観点 | 分析内容 |
+    |------|----------|
+    | 1. 情報の簡潔さ |  |
+    | 2. 情報の整理 |  |
+    | 3. 動作指示の明確性（いつ、どこで、誰が、どのように） |  |
     """
     try:
         response = model.generate_content(prompt)
@@ -146,23 +150,46 @@ def generate_improvement_suggestions(text, east_analysis):
     行動科学分析：
     {east_analysis}
     
-    以下の観点を踏まえ、Easy（簡単さ）に特化した重要な改善ポイント5つを厳選し、①～⑤の番号を振って出力してください。
-    1. 情報の簡潔さ
-    2. 情報の整理
-    3. 動作指示の明確性（いつ、どこで、誰が、どのように）
-    
-    出力形式：
-    ① 改善ポイントと具体的な改善案
-    ② 改善ポイントと具体的な改善案
-    ③ 改善ポイントと具体的な改善案
-    ④ 改善ポイントと具体的な改善案
-    ⑤ 改善ポイントと具体的な改善案
+    以下の観点を踏まえ、Easy（簡単さ）に特化した重要な改善ポイント5つを厳選し、①～⑤の番号を振って、Markdown表（| 番号 | 改善ポイントと具体的な改善案 |）で出力してください。
+    | 番号 | 改善ポイントと具体的な改善案 |
+    |------|-----------------------------|
+    | ① |  |
+    | ② |  |
+    | ③ |  |
+    | ④ |  |
+    | ⑤ |  |
     """
     try:
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
         st.error(f"改善案の生成に失敗しました: {str(e)}")
+        return None
+
+def generate_process_optimization_ideas(text, east_analysis):
+    prompt = f"""
+    以下の分析結果を基に、プロセス全体を最適化するための、このファイル以外の改善アイデアを5つ提案してください。
+    
+    原文書：
+    {text}
+    
+    行動科学分析：
+    {east_analysis}
+    
+    Markdown表（| 番号 | 改善アイデア |）で出力してください。
+    | 番号 | 改善アイデア |
+    |------|--------------|
+    | ① |  |
+    | ② |  |
+    | ③ |  |
+    | ④ |  |
+    | ⑤ |  |
+    """
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"プロセス全体の最適化アイデアの生成に失敗しました: {str(e)}")
         return None
 
 # Streamlit UI
@@ -184,7 +211,7 @@ st.markdown('''
 st.markdown('<p style="color: #0066cc; font-weight: bold;">Step2 あなたは、診断結果を踏まえて実際に改善を行います。</p>', unsafe_allow_html=True)
 st.markdown('''
 <p style="font-size: 0.9em;">
-このツールは、改善スピードを加速化し、一時的な処置を行うために用意された、あくまでも初期診断ツールです。改善の実行や、さらなる課題の深堀り、プロセス全体の見直しを進めていきましょう。<br>
+このツールは、改善スピードを加速化したり、一時的な処置を行うために用意された、あくまでも初期診断ツールです。改善の実行や、さらなる課題の深堀り、プロセス全体の見直しを進めていきましょう。<br>
 ※ファイル改善例の生成機能については、現在準備中です。
 </p>
 ''', unsafe_allow_html=True)
@@ -221,8 +248,13 @@ if uploaded_file is not None:
             
             # 改善案の生成
             improvements = generate_improvement_suggestions(text, east_analysis)
-            st.subheader("改善案")
+            st.subheader("改善案（重要な改善ポイント5選）")
             st.write(improvements)
+            
+            # プロセス全体の最適化アイデア
+            process_ideas = generate_process_optimization_ideas(text, east_analysis)
+            st.subheader("プロセス全体の最適化アイデア（このファイル以外）")
+            st.write(process_ideas)
 
 # フッター
 st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">Powered by StepSpin 2025</div>', unsafe_allow_html=True) 
