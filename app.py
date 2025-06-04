@@ -229,12 +229,12 @@ if uploaded_file is not None:
             # ペルソナ分析
             persona = analyze_persona(text, related_info)
             st.subheader("想定されるペルソナ")
-            st.write(persona)
+            st.markdown(persona)
             
             # 目標行動の分析
             target_action = analyze_target_action(text, persona)
             st.subheader("促したい行動")
-            st.write(target_action)
+            st.markdown(target_action)
             
             # 行動プロセスマップの作成
             process_map = create_action_process_map(text, target_action)
@@ -244,17 +244,17 @@ if uploaded_file is not None:
             # 行動科学分析
             east_analysis = analyze_east_framework(text, process_map)
             st.subheader("行動科学分析")
-            st.write(east_analysis)
+            st.markdown(east_analysis)
             
             # 改善案の生成
             improvements = generate_improvement_suggestions(text, east_analysis)
             st.subheader("改善案（重要な改善ポイント5選）")
-            st.write(improvements)
+            st.markdown(improvements)
             
             # プロセス全体の最適化アイデア
             process_ideas = generate_process_optimization_ideas(text, east_analysis)
             st.subheader("プロセス全体の最適化アイデア（このファイル以外）")
-            st.write(process_ideas)
+            st.markdown(process_ideas)
 
 # フッター
 st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">Powered by StepSpin 2025</div>', unsafe_allow_html=True) 
