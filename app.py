@@ -172,15 +172,15 @@ def generate_improvement_suggestions(text, east_analysis):
 st.image("logo.png", width=100)
 
 st.title("スラスラ診断くん")
-st.markdown('<p style="font-size: 0.9em;">このツールは、行動科学の知見に基づき、行政文書やチラシに潜む"スラッジ"（複雑さ、煩雑さ、難解さといった行動を妨げる要因）を特定し、スラスラ読んで行動できるよう改善するための初期診断ツールです。</p>', unsafe_allow_html=True)
+st.markdown('<p style="font-size: 0.9em;">このツールは、行動科学の知見に基づき、行政文書やチラシに潜む<span style="color: #0066cc; font-weight: bold;">スラッジ</span>（複雑さ、煩雑さ、難解さといった行動を妨げる要因）を特定し、<span style="color: #0066cc; font-weight: bold;">スラスラ</span>読んで行動できるよう改善するための初期診断ツールです。</p>', unsafe_allow_html=True)
 
 st.subheader("使い方")
 st.markdown('<p style="color: #0066cc; font-weight: bold;">Step1 チラシなどのPDFファイルをアップロードしてください。</p>', unsafe_allow_html=True)
-st.markdown('<p style="font-size: 0.9em;">　このツールは、関連ウェブサイトの検索結果も踏まえ、ファイルのターゲット、促したい目標行動、そこに至るまでのプロセスを可視化し、次のプロセスへの動作や手順が明確でわかりすいか、必要十分な内容かを診断し、重要な改善ポイントを５つ提示します。また、プロセス全体を最適化するために、このファイル以外の改善アイデアも提示します。</p>', unsafe_allow_html=True)
+st.markdown('<p style="font-size: 0.9em;">このツールは、関連ウェブサイトの検索結果も踏まえ、ファイルのターゲット、促したい目標行動、そこに至るまでのプロセスを可視化し、次への動作や手順が明確でわかりすいか、情報は必要十分なシンプルなものかを診断し、重要な改善ポイントを５つ提示します。また、プロセス全体を最適化するために、このファイル以外の改善アイデアも提示します。</p>', unsafe_allow_html=True)
 
 st.markdown('<p style="color: #0066cc; font-weight: bold;">Step2 あなたは、診断結果を踏まえて実際に改善を行います。</p>', unsafe_allow_html=True)
-st.markdown('<p style="font-size: 0.9em;">　このツールは、改善スピードを加速化するために用意された、あくまでも初期診断ツールです。改善の実行や、さらなる課題の深堀り、プロセス全体の見直しを進めていきましょう。</p>', unsafe_allow_html=True)
-st.markdown('<p style="font-size: 0.9em;">　※ファイル改善例の生成機能については、現在準備中です。</p>', unsafe_allow_html=True)
+st.markdown('<p style="font-size: 0.9em;">このツールは、改善スピードを加速化し、一時的な処置を行うために用意された、あくまでも初期診断ツールです。改善の実行や、さらなる課題の深堀り、プロセス全体の見直しを進めていきましょう。</p>', unsafe_allow_html=True)
+st.markdown('<p style="font-size: 0.9em;">※ファイル改善例の生成機能については、現在準備中です。</p>', unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("PDFファイルをアップロードしてください", type=['pdf'])
 
