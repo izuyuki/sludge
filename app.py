@@ -98,10 +98,11 @@ def create_action_process_map(text, target_action):
     {target_action}
     
     以下の形式で出力してください：
-    1. 行動プロセスの各ステップ
-    2. 各ステップでの必要な情報
-    3. 文書との接点
-    4. 想定される摩擦点
+    １、行動プロセスの各ステップ（文書に至るまでのステップも記載）
+    ２、各ステップで必要な情報
+    ３、想定される摩擦
+    
+    アップロードした文書との接点が強い場所ほど、濃い色で塗ってください。
     """
     try:
         response = model.generate_content(prompt)
