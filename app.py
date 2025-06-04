@@ -169,7 +169,7 @@ def generate_improvement_suggestions(text, east_analysis):
 
 # Streamlit UI
 # ロゴの表示
-st.image("logo.png", width=100)
+st.image("logo.png", width=50)
 
 st.title("スラスラ診断くん")
 st.markdown('<p style="font-size: 0.9em;">このツールは、行動科学の知見に基づき、行政文書やチラシに潜む"スラッジ"（複雑さ、煩雑さ、難解さといった行動を妨げる要因）を特定し、スラスラ読んで行動できるよう改善するための初期診断ツールです。</p>', unsafe_allow_html=True)
