@@ -55,7 +55,7 @@ def analyze_persona(text, related_info):
     関連情報：
     {related_info}
     
-    以下の形式で出力してください：
+    以下の形式で、各項目100～150字程度で簡潔に出力してください：
     1. 主要なペルソナの特徴
     2. 想定される年齢層
     3. 想定される生活状況
@@ -168,8 +168,19 @@ def generate_improvement_suggestions(text, east_analysis):
         return None
 
 # Streamlit UI
-st.title("行政情報媒体改善アシスタント")
-st.write("PDFファイルをアップロードして、行政情報媒体の改善点を分析しましょう。")
+# ロゴの表示
+st.image("logo.png", width=200)
+
+st.title("スラスラ診断くん")
+st.write('このツールは、行動科学の知見に基づき、行政文書やチラシに潜む"スラッジ"（複雑さ、煩雑さ、難解さといった行動を妨げる要因）を特定し、スラスラ読んで行動できるよう改善するための初期診断ツールです。')
+
+st.subheader("使い方")
+st.write("Step1 チラシなどのPDFファイルをアップロードしてください。")
+st.write("　このツールは、関連ウェブサイトの検索結果も踏まえ、ファイルのターゲット、促したい目標行動、そこに至るまでのプロセスを可視化し、次のプロセスへの動作や手順が明確でわかりすいか、必要十分な内容かを診断し、重要な改善ポイントを５つ提示します。また、プロセス全体を最適化するために、このファイル以外の改善アイデアも提示します。")
+
+st.write("Step2 あなたは、診断結果を踏まえて実際に改善を行います。")
+st.write("　このツールは、改善スピードを加速化するために用意された、あくまでも初期診断ツールです。改善の実行や、さらなる課題の深堀り、プロセス全体の見直しを進めていきましょう。")
+st.write("　※ファイル改善例の生成機能については、現在準備中です。")
 
 uploaded_file = st.file_uploader("PDFファイルをアップロードしてください", type=['pdf'])
 
@@ -207,4 +218,4 @@ if uploaded_file is not None:
             st.write(improvements)
 
 # フッター
-st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">このアプリは氷解社が作成しています</div>', unsafe_allow_html=True) 
+st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">Powered by StepSpin 2025</div>', unsafe_allow_html=True) 
