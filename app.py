@@ -128,6 +128,7 @@ def analyze_east_framework(text, process_map):
     
     以下の3観点について、必ずMarkdown表（| 観点 | 分析内容 |）で出力してください。
     各「分析内容」は必ず箇条書きでまとめてください。
+    <br>などのHTMLタグや特殊記号は使わず、純粋なMarkdown表で出力してください。
     | 観点 | 分析内容 |
     |------|----------|
     | 1. 情報の簡潔さ（真に必要な情報に限定されているか） |  |
@@ -153,6 +154,7 @@ def generate_improvement_suggestions(text, east_analysis):
     
     以下の観点を踏まえ、Easy（簡単さ）に特化した重要な改善ポイント5つを厳選し、①～⑤の番号を振って、必ずMarkdown表（| 番号 | 改善ポイントと具体的な改善案 |）で出力してください。
     各「改善ポイントと具体的な改善案」は必ず箇条書きでまとめてください。
+    <br>などのHTMLタグや特殊記号は使わず、純粋なMarkdown表で出力してください。
     | 番号 | 改善ポイントと具体的な改善案 |
     |------|-----------------------------|
     | ① |  |
@@ -168,10 +170,11 @@ def generate_improvement_suggestions(text, east_analysis):
         st.error(f"改善案の生成に失敗しました: {str(e)}")
         return None
 
-def generate_process_optimization_ideas(text, east_analysis):
+def generate_process_optimization_ideas(text, east_analysis, process_map):
     prompt = f"""
-    以下の分析結果を基に、プロセス全体を最適化するための、このファイル以外の改善アイデアを5つ提案してください。
+    以下の分析結果と行動プロセスマップを基に、プロセス全体を最適化するための、このファイル以外の改善アイデアを5つ提案してください。
     ※必ずアップロードしたファイル自体の改善以外のことを提案し、上段の改善案と重複しないようにしてください。
+    ※全体の行動プロセスマップを踏まえた提案にしてください。
     
     原文書：
     {text}
@@ -179,7 +182,11 @@ def generate_process_optimization_ideas(text, east_analysis):
     行動科学分析：
     {east_analysis}
     
+    行動プロセスマップ：
+    {process_map}
+    
     必ずMarkdown表（| 番号 | 改善アイデア |）で5つ出力してください。
+    <br>などのHTMLタグや特殊記号は使わず、純粋なMarkdown表で出力してください。
     | 番号 | 改善アイデア |
     |------|--------------|
     | ① |  |
@@ -255,7 +262,7 @@ if uploaded_file is not None:
             st.markdown(improvements)
             
             # プロセス全体の最適化アイデア
-            process_ideas = generate_process_optimization_ideas(text, east_analysis)
+            process_ideas = generate_process_optimization_ideas(text, east_analysis, process_map)
             st.subheader("プロセス全体の最適化アイデア（このファイル以外）")
             st.markdown(process_ideas)
 
