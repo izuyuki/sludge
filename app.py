@@ -6,6 +6,7 @@ import PyPDF2
 import io
 import requests
 from bs4 import BeautifulSoup
+import json
 
 # 環境変数の読み込み
 load_dotenv()
@@ -97,18 +98,17 @@ def create_action_process_map(text, target_action):
     目標行動：
     {target_action}
     
-    以下の形式で表を作成してください：
-    | ステップ | 必要な情報 | 想定される摩擦 |
-    |---------|------------|----------------|
-    
-    注意点：
-    ・ステップには文書に至るまでのプロセスも含めてください
-    ・アップロードした文書との接点が強い場所ほど、濃い青色で塗ってください
-    ・各セルは簡潔に箇条書きで記載してください
-    ・色の指定は以下のように行ってください：
-      - 接点が強い：<span style="background-color: #0066cc; color: white;">テキスト</span>
-      - 接点が中程度：<span style="background-color: #66b3ff; color: white;">テキスト</span>
-      - 接点が弱い：<span style="background-color: #cce6ff; color: black;">テキスト</span>
+    以下の形式でJSONリストとして出力してください。
+    各要素は以下の4つのキーを持ちます：
+    - step: ステップ名（文書に至るまでのプロセスも含めてください）
+    - info: そのステップで必要な情報
+    - friction: 想定される摩擦
+    - level: アップロードした文書との接点の強さ（"strong"、"medium"、"weak" のいずれか）
+    例：
+    [
+      {"step": "研修ニーズの把握", "info": "住民サービス向上ニーズ", "friction": "現状の課題が明確になっていない", "level": "weak"},
+      ...
+    ]
     """
     try:
         response = model.generate_content(prompt)
@@ -216,12 +216,29 @@ if uploaded_file is not None:
             st.write(target_action)
             
             # 行動プロセスマップの作成
-            process_map = create_action_process_map(text, target_action)
+            process_map_json = create_action_process_map(text, target_action)
             st.subheader("行動プロセスマップ")
-            st.markdown(process_map)
+            try:
+                process_map = json.loads(process_map_json)
+                color_map = {"strong": "#0066cc", "medium": "#66b3ff", "weak": "#cce6ff"}
+                font_color_map = {"strong": "white", "medium": "white", "weak": "black"}
+                html = "<table style='width:100%; border-collapse:collapse;'>"
+                html += "<tr><th>ステップ</th><th>必要な情報</th><th>想定される摩擦</th></tr>"
+                for row in process_map:
+                    bg = color_map.get(row.get("level", "weak"), "#cce6ff")
+                    fc = font_color_map.get(row.get("level", "weak"), "black")
+                    html += f"<tr>"
+                    html += f"<td style='background:{bg}; color:{fc}; padding:8px; border:1px solid #ccc'>{row.get('step','')}</td>"
+                    html += f"<td style='background:{bg}; color:{fc}; padding:8px; border:1px solid #ccc'>{row.get('info','')}</td>"
+                    html += f"<td style='background:{bg}; color:{fc}; padding:8px; border:1px solid #ccc'>{row.get('friction','')}</td>"
+                    html += f"</tr>"
+                html += "</table>"
+                st.markdown(html, unsafe_allow_html=True)
+            except Exception as e:
+                st.write(process_map_json)
             
             # EASTフレームワーク分析
-            east_analysis = analyze_east_framework(text, process_map)
+            east_analysis = analyze_east_framework(text, process_map_json)
             st.subheader("EASTフレームワーク分析")
             st.write(east_analysis)
             
