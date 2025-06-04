@@ -97,12 +97,14 @@ def create_action_process_map(text, target_action):
     目標行動：
     {target_action}
     
-    以下の形式で出力してください：
-    １、行動プロセスの各ステップ（文書に至るまでのステップも記載）
-    ２、各ステップで必要な情報
-    ３、想定される摩擦
+    以下の形式で表を作成してください：
+    | ステップ | 必要な情報 | 想定される摩擦 |
+    |---------|------------|----------------|
     
-    アップロードした文書との接点が強い場所ほど、濃い色で塗ってください。
+    注意点：
+    ・ステップには文書に至るまでのプロセスも含めてください
+    ・アップロードした文書との接点が強い場所ほど、濃い色で塗ってください
+    ・各セルは簡潔に箇条書きで記載してください
     """
     try:
         response = model.generate_content(prompt)
@@ -172,7 +174,6 @@ st.image("logo.png", width=100)
 st.title("スラスラ診断くん")
 st.markdown('<p style="font-size: 0.9em;">このツールは、行動科学の知見に基づき、行政文書やチラシに潜む<span style="color: #0066cc; font-weight: bold;">スラッジ</span>（複雑さ、煩雑さ、難解さといった行動を妨げる要因）を特定し、<span style="color: #0066cc; font-weight: bold;">スラスラ</span>読んで行動できるよう改善するための初期診断ツールです。</p>', unsafe_allow_html=True)
 
-st.subheader("使い方")
 st.markdown('<p style="color: #0066cc; font-weight: bold;">Step1 チラシなどのPDFファイルをアップロードしてください。</p>', unsafe_allow_html=True)
 st.markdown('''
 <p style="font-size: 0.9em;">
@@ -213,7 +214,7 @@ if uploaded_file is not None:
             # 行動プロセスマップの作成
             process_map = create_action_process_map(text, target_action)
             st.subheader("行動プロセスマップ")
-            st.write(process_map)
+            st.markdown(process_map)
             
             # EASTフレームワーク分析
             east_analysis = analyze_east_framework(text, process_map)
