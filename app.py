@@ -173,7 +173,13 @@ st.markdown('<p style="font-size: 0.9em;">このツールは、行動科学の�
 
 st.subheader("使い方")
 st.markdown('<p style="color: #0066cc; font-weight: bold;">Step1 チラシなどのPDFファイルをアップロードしてください。</p>', unsafe_allow_html=True)
-st.markdown('<p style="font-size: 0.9em;">このツールは、関連ウェブサイトの検索結果も踏まえ、ファイルのターゲット、促したい目標行動、そこに至るまでのプロセスを可視化し、次への動作や手順が明確でわかりすいか、情報は必要十分なシンプルなものかを診断、重要な改善ポイントを５つ提示します。また、プロセス全体を最適化するために、このファイル以外の改善アイデアも提示します。</p>', unsafe_allow_html=True)
+st.markdown('''
+<p style="font-size: 0.9em;">
+このツールは、関連ウェブサイトの検索結果も踏まえ、ファイルのターゲット、促したい目標行動、そこに至るまでのプロセスを可視化します。<br><br>
+次への動作や手順が明確でわかりすいか、情報は必要十分なシンプルなものかを診断、重要な改善ポイントを５つ提示します。<br><br>
+また、プロセス全体を最適化するために、このファイル以外の改善アイデアも提示します。
+</p>
+''', unsafe_allow_html=True)
 
 st.markdown('<p style="color: #0066cc; font-weight: bold;">Step2 あなたは、診断結果を踏まえて実際に改善を行います。</p>', unsafe_allow_html=True)
 st.markdown('<p style="font-size: 0.9em;">このツールは、改善スピードを加速化し、一時的な処置を行うために用意された、あくまでも初期診断ツールです。改善の実行や、さらなる課題の深堀り、プロセス全体の見直しを進めていきましょう。</p>', unsafe_allow_html=True)
