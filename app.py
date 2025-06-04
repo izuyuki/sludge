@@ -103,8 +103,12 @@ def create_action_process_map(text, target_action):
     
     注意点：
     ・ステップには文書に至るまでのプロセスも含めてください
-    ・アップロードした文書との接点が強い場所ほど、濃い色で塗ってください
+    ・アップロードした文書との接点が強い場所ほど、濃い青色で塗ってください
     ・各セルは簡潔に箇条書きで記載してください
+    ・色の指定は以下のように行ってください：
+      - 接点が強い：<span style="background-color: #0066cc; color: white;">テキスト</span>
+      - 接点が中程度：<span style="background-color: #66b3ff; color: white;">テキスト</span>
+      - 接点が弱い：<span style="background-color: #cce6ff; color: black;">テキスト</span>
     """
     try:
         response = model.generate_content(prompt)
