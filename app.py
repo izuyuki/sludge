@@ -65,7 +65,7 @@ st.markdown("""
         margin-bottom: 2rem;
     }
     .step-title {
-        color: #0066cc;
+        color: #333333;
         font-weight: bold;
         font-size: 1.2rem;
         margin-top: 2rem;
@@ -267,20 +267,25 @@ st.image("logo.png", width=100)
 st.title("スラスラ診断くん")
 st.markdown('<p class="lead-text">行動科学の知見と生成AIにより、行政文書やチラシに潜む<span style="font-weight: bold;">"スラッジ"</span>（複雑さ、煩雑さ、難解さといった行動を妨げる要因）を特定し、<span style="font-weight: bold;">"スラスラ"</span>読んで行動できるよう改善するための初期診断ツールです。</p>', unsafe_allow_html=True)
 
-st.markdown('<p class="step-title">Step1 チラシなどのPDFファイルをアップロードしてください。</p>', unsafe_allow_html=True)
+st.markdown('<p class="step-title">Step1 チラシなどのPDF文書（１ファイル）をアップロードしてください。</p>', unsafe_allow_html=True)
 st.markdown('''
 <p class="step-description">
-・このツールは、関連ウェブサイトの検索結果も踏まえ、ファイルのターゲット、促したい目標行動、そこに至るまでのプロセスを可視化します。<br>
-・次への動作や手順が明確でわかりすいか、情報は必要十分なシンプルなものかを診断、重要な改善ポイントを５つ提示します。<br>
-・プロセス全体を最適化するために、このファイル以外の改善アイデアも提示します。
+文書のターゲット、促したい目標行動、そこに至るプロセスを可視化します。
 </p>
 ''', unsafe_allow_html=True)
 
-st.markdown('<p class="step-title">Step2 あなたは、診断結果を踏まえて実際に改善を行います。</p>', unsafe_allow_html=True)
+st.markdown('<p class="step-title">Step2 診断結果を踏まえて、チラシなどを実際に改善します。</p>', unsafe_allow_html=True)
 st.markdown('''
 <p class="step-description">
-このツールは、改善スピードを加速化したり、一時的な処置を行うために用意された、あくまでも初期診断ツールです。改善の実行や、さらなる課題の深堀り、プロセス全体の見直しを進めていきましょう。<br>
-※ファイル改善例の生成機能については、現在準備中です。
+提示される重要な改善ポイント５選は、すぐに取り組めます。<br>
+※改善文書の自動生成機能は、現在準備中です。
+</p>
+''', unsafe_allow_html=True)
+
+st.markdown('<p class="step-title">Step3 文書以外の改善ができないか、プロセス全体を見直します。</p>', unsafe_allow_html=True)
+st.markdown('''
+<p class="step-description">
+この文書以外の改善アイデアも提示するので、さらなる課題の深堀りや、プロセス全体の見直しを進めていきましょう。
 </p>
 ''', unsafe_allow_html=True)
 
