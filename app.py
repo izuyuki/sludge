@@ -277,8 +277,8 @@ st.markdown("""
 
 # アップロードエリアの幅を調整
 with st.container():
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
+    col1, col2 = st.columns([2, 3])
+    with col1:
         uploaded_file = st.file_uploader("PDFファイルをここにアップロードしてください", type=['pdf'])
 
 if uploaded_file is not None:
