@@ -190,7 +190,7 @@ def analyze_east_framework(text, process_map):
     | 項目 | チェック内容 | 分析結果 |
     |------|------------|----------|
     | 1. 情報の簡潔性 | 真に必要な情報に限定されているか。難解な言葉や冗長な文章が使われてないか。 |  |
-    | 2. 情報の構造性 | 情報は項目ごとに整理され、視覚的にわかりやすく、時系列にそって配置されているか。情報の重複はないか。 |  |
+    | 2. 情報の構造性 | 情報は項目ごとに整理され、視覚的にわかりやすく、優先度や時系列にそって配置されているか。情報の重複はないか。 |  |
     | 3. 動作指示の明確性 | いつ、どこで、誰が、どのように行動すべきか明確に記載されているか |  |
     """
     try:
@@ -265,7 +265,7 @@ def generate_process_optimization_ideas(text, east_analysis, process_map):
 st.image("logo.png", width=100)
 
 st.title("スラスラ診断くん")
-st.markdown('<p class="lead-text">行動科学の知見と生成AIにより、行政文書やチラシに潜む<span style="font-weight: bold;">"スラッジ"</span>（複雑さ、煩雑さ、難解さといった行動を妨げる要因）を特定し、<span style="font-weight: bold;">"スラスラ"</span>読んで行動できるよう改善するための初期診断ツールです。</p>', unsafe_allow_html=True)
+st.markdown('<p class="lead-text" style="color: #333333;">行動科学の知見と生成AIにより、行政文書やチラシに潜む<span style="font-weight: bold;">"スラッジ"</span>（複雑さ、煩雑さ、難解さといった行動を妨げる要因）を特定し、<span style="font-weight: bold;">"スラスラ"</span>読んで行動できるよう改善するための初期診断ツールです。</p>', unsafe_allow_html=True)
 
 st.markdown("""
 | あなたの行動ステップ | このツールができること |
