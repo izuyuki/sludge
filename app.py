@@ -267,27 +267,13 @@ st.image("logo.png", width=100)
 st.title("スラスラ診断くん")
 st.markdown('<p class="lead-text">行動科学の知見と生成AIにより、行政文書やチラシに潜む<span style="font-weight: bold;">"スラッジ"</span>（複雑さ、煩雑さ、難解さといった行動を妨げる要因）を特定し、<span style="font-weight: bold;">"スラスラ"</span>読んで行動できるよう改善するための初期診断ツールです。</p>', unsafe_allow_html=True)
 
-st.markdown('<p class="step-title">Step1 チラシなどのPDF文書（１ファイル）をアップロードしてください。</p>', unsafe_allow_html=True)
-st.markdown('''
-<p class="step-description">
-文書のターゲット、促したい目標行動、そこに至るプロセスを可視化します。
-</p>
-''', unsafe_allow_html=True)
-
-st.markdown('<p class="step-title">Step2 診断結果を踏まえて、チラシなどを実際に改善します。</p>', unsafe_allow_html=True)
-st.markdown('''
-<p class="step-description">
-提示される重要な改善ポイント５選は、すぐに取り組めます。<br>
-※改善文書の自動生成機能は、現在準備中です。
-</p>
-''', unsafe_allow_html=True)
-
-st.markdown('<p class="step-title">Step3 文書以外の改善ができないか、プロセス全体を見直します。</p>', unsafe_allow_html=True)
-st.markdown('''
-<p class="step-description">
-この文書以外の改善アイデアも提示するので、さらなる課題の深堀りや、プロセス全体の見直しを進めていきましょう。
-</p>
-''', unsafe_allow_html=True)
+st.markdown("""
+| ステップ | 内容 |
+|---------|------|
+| **Step1** | チラシなどのPDF文書（１ファイル）をアップロードしてください。<br>文書のターゲット、促したい目標行動、そこに至るプロセスを可視化します。 |
+| **Step2** | 診断結果を踏まえて、チラシなどを実際に改善します。<br>提示される重要な改善ポイント５選は、すぐに取り組めます。<br>※改善文書の自動生成機能は、現在準備中です。 |
+| **Step3** | 文書以外の改善ができないか、プロセス全体を見直します。<br>この文書以外の改善アイデアも提示するので、さらなる課題の深堀りや、プロセス全体の見直しを進めていきましょう。 |
+""")
 
 uploaded_file = st.file_uploader("PDFファイルをアップロードしてください", type=['pdf'])
 
