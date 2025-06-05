@@ -275,7 +275,11 @@ st.markdown("""
 | **Step3** 文書以外の改善ができないか、プロセス全体を見直してください。 | アップロードした文書以外の改善アイデアも提示します。 |
 """, unsafe_allow_html=True)
 
-uploaded_file = st.file_uploader("PDFファイルをアップロードしてください", type=['pdf'])
+# アップロードエリアの幅を調整
+with st.container():
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        uploaded_file = st.file_uploader("PDFファイルをここにアップロードしてください", type=['pdf'])
 
 if uploaded_file is not None:
     with st.spinner("分析中..."):
