@@ -106,7 +106,7 @@ def search_related_info(text):
 
 def analyze_persona(text, related_info):
     prompt = f"""
-    以下の行政文書と関連情報を分析し、想定されるペルソナを特定してください：
+    以下の行政文書と関連情報を分析し、想定されるターゲットを特定してください：
     
     文書内容：
     {text}
@@ -117,7 +117,7 @@ def analyze_persona(text, related_info):
     以下の4項目について、各100字程度で簡潔にまとめ、必ずMarkdown表（| 項目 | 内容 |）で出力してください。
     | 項目 | 内容 |
     |------|------|
-    | 1. 主要なペルソナの特徴 |  |
+    | 1. 主要なターゲットの特徴 |  |
     | 2. 想定される年齢層 |  |
     | 3. 想定される生活状況 |  |
     | 4. 想定される課題やニーズ |  |
@@ -126,17 +126,17 @@ def analyze_persona(text, related_info):
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        st.error(f"ペルソナ分析に失敗しました: {str(e)}")
+        st.error(f"ターゲット分析に失敗しました: {str(e)}")
         return None
 
 def analyze_target_action(text, persona):
     prompt = f"""
-    以下の行政文書とペルソナ情報を分析し、促したい行動を特定してください：
+    以下の行政文書とターゲット情報を分析し、促したい行動を特定してください：
     
     文書内容：
     {text}
     
-    ペルソナ情報：
+    ターゲット情報：
     {persona}
     
     主要な目標行動のみを100字程度で出力してください。
@@ -175,7 +175,7 @@ def create_action_process_map(text, target_action):
 
 def analyze_east_framework(text, process_map):
     prompt = f"""
-    行動科学の観点から、特にEasy（簡単さ）に特化して、以下の情報を分析してください。
+    スラッジの観点から、以下の情報を分析してください。
     ※ここでは改善案や提案は出さず、分析のみを行ってください。
     
     文書内容：
@@ -184,20 +184,20 @@ def analyze_east_framework(text, process_map):
     行動プロセスマップ：
     {process_map}
     
-    以下の3観点について、必ずMarkdown表（| 観点 | 分析内容 |）で出力してください。
-    各「分析内容」は必ず箇条書きでまとめてください。
+    以下の3観点について、必ずMarkdown表（| 項目 | チェック内容 | 分析結果 |）で出力してください。
+    各「分析結果」は必ず箇条書きでまとめてください。
     <br>などのHTMLタグや特殊記号は使わず、純粋なMarkdown表で出力してください。
-    | 観点 | 分析内容 |
-    |------|----------|
-    | 1. 情報の簡潔さ（真に必要な情報に限定されているか） |  |
-    | 2. 情報の整理（配置、時系列、視覚的整理、項目、重複有無） |  |
-    | 3. 動作指示の明確性（いつ、どこで、誰が、どのように） |  |
+    | 項目 | チェック内容 | 分析結果 |
+    |------|------------|----------|
+    | 1. 情報の簡潔性 | 真に必要な情報に限定されているか |  |
+    | 2. 情報の構造性 | 配置、時系列、視覚的整理、項目、重複有無 |  |
+    | 3. 動作指示の明確性 | いつ、どこで、誰が、どのように |  |
     """
     try:
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        st.error(f"行動科学分析に失敗しました: {str(e)}")
+        st.error(f"スラッジ分析に失敗しました: {str(e)}")
         return None
 
 def generate_improvement_suggestions(text, east_analysis):
@@ -207,19 +207,19 @@ def generate_improvement_suggestions(text, east_analysis):
     原文書：
     {text}
     
-    行動科学分析：
+    スラッジ分析：
     {east_analysis}
     
-    以下の観点を踏まえ、Easy（簡単さ）に特化した重要な改善ポイント5つを厳選し、①～⑤の番号を振って、必ずMarkdown表（| 番号 | 改善ポイントと具体的な改善案 |）で出力してください。
-    各「改善ポイントと具体的な改善案」は必ず箇条書きでまとめてください。
+    以下の観点を踏まえ、Easy（簡単さ）に特化した重要な改善ポイント5つを厳選し、①～⑤の番号を振って、必ずMarkdown表（| 番号 | 改善ポイント | 具体的な改善案 |）で出力してください。
+    各「具体的な改善案」は必ず箇条書きでまとめてください。
     <br>などのHTMLタグや特殊記号は使わず、純粋なMarkdown表で出力してください。
-    | 番号 | 改善ポイントと具体的な改善案 |
-    |------|-----------------------------|
-    | ① |  |
-    | ② |  |
-    | ③ |  |
-    | ④ |  |
-    | ⑤ |  |
+    | 番号 | 改善ポイント | 具体的な改善案 |
+    |------|------------|----------------|
+    | ① |  |  |
+    | ② |  |  |
+    | ③ |  |  |
+    | ④ |  |  |
+    | ⑤ |  |  |
     """
     try:
         response = model.generate_content(prompt)
@@ -237,7 +237,7 @@ def generate_process_optimization_ideas(text, east_analysis, process_map):
     原文書：
     {text}
     
-    行動科学分析：
+    スラッジ分析：
     {east_analysis}
     
     行動プロセスマップ：
@@ -271,9 +271,9 @@ st.markdown("""
 | ステップ | あなたにして欲しいこと | このツールができること |
 |---------|-------------------|-------------------|
 | **Step1** | チラシなどのPDF文書（１ファイル）をアップロードしてください。 | 文書のターゲット、促したい目標行動、そこに至るプロセスを可視化し、スラッジを特定します。 |
-| **Step2** | 診断結果を踏まえて、チラシなどを実際に改善してください。 | すぐに取り組める"重要な改善ポイント５選"を提示します（改善文書の自動生成機能は、現在準備中です）。 |
+| **Step2** | 診断結果を踏まえて、チラシなどを実際に改善してください。 | すぐに取り組める"重要な改善ポイント５選"を提示します\n（改善文書の自動生成機能は、現在準備中です）。 |
 | **Step3** | 文書以外の改善ができないか、プロセス全体を見直します。 | プロセス全体の見直しにつなげるため、この文書以外の改善アイデアも提示します。 |
-""")
+""", unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("PDFファイルをアップロードしてください", type=['pdf'])
 
@@ -285,14 +285,14 @@ if uploaded_file is not None:
             # 関連情報の検索
             related_info = search_related_info(text)
             
-            # ペルソナ分析
+            # ターゲット分析
             persona = analyze_persona(text, related_info)
-            st.subheader("想定されるペルソナ")
+            st.subheader("想定されるターゲット")
             st.markdown(persona)
             
             # 目標行動の分析
             target_action = analyze_target_action(text, persona)
-            st.subheader("促したい行動")
+            st.subheader("目標行動")
             st.markdown(target_action)
             
             # 行動プロセスマップの作成
@@ -300,19 +300,19 @@ if uploaded_file is not None:
             st.subheader("行動プロセスマップ")
             st.markdown(process_map)
             
-            # 行動科学分析
+            # スラッジ分析
             east_analysis = analyze_east_framework(text, process_map)
-            st.subheader("行動科学分析")
+            st.subheader("スラッジ分析")
             st.markdown(east_analysis)
             
             # 改善案の生成
             improvements = generate_improvement_suggestions(text, east_analysis)
-            st.subheader("改善案（重要な改善ポイント5選）")
+            st.subheader("重要な改善ポイント５選")
             st.markdown(improvements)
             
             # プロセス全体の最適化アイデア
             process_ideas = generate_process_optimization_ideas(text, east_analysis, process_map)
-            st.subheader("プロセス全体の最適化アイデア（このファイル以外）")
+            st.subheader("この文書以外の改善アイデア")
             st.markdown(process_ideas)
 
 # フッター
