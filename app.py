@@ -345,7 +345,7 @@ if uploaded_file is not None:
             
             # 改善提案の表示
             st.markdown("### 改善提案")
-            st.markdown(analysis_result["改善提案"])
+            st.markdown(analysis_result["改善提案"].replace("<br>", "\n\n"), unsafe_allow_html=True)
 
 # フッター
 st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">Powered by StepSpin 2025</div>', unsafe_allow_html=True) 
