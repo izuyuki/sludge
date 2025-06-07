@@ -20,7 +20,7 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 # モデルの設定
-model = genai.GenerativeModel('models/gemini-1.0-pro')
+model = genai.GenerativeModel('models/gemini-1.5-pro')
 
 # デジタル庁のデザインシステムに合わせたスタイル設定
 st.set_page_config(
