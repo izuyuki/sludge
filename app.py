@@ -20,7 +20,7 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 # モデルの設定
-model = genai.GenerativeModel('models/gemini-1.5-pro-latest')
+model = genai.GenerativeModel('models/gemini-1.5-pro')
 
 # デジタル庁のデザインシステムに合わせたスタイル設定
 st.set_page_config(
@@ -307,45 +307,17 @@ if uploaded_file is not None:
             # スラッジ分析
             east_analysis = analyze_east_framework(text, process_map)
             st.subheader("スラッジ分析")
+            st.markdown(east_analysis)
             
-            # スラッジ分析の実行
-            analysis_result = analyze_sludge(text)
+            # 改善案の生成
+            improvements = generate_improvement_suggestions(text, east_analysis)
+            st.subheader("重要な改善ポイント５選")
+            st.markdown(improvements)
             
-            # 結果の表示
-            st.markdown("### スラッジ分析結果")
-            
-            # 良い点の表示
-            st.markdown("#### 良い点")
-            good_points = []
-            if "明確な目的" in analysis_result and analysis_result["明確な目的"]:
-                good_points.append("目的が明確に示されています")
-            if "具体的な行動" in analysis_result and analysis_result["具体的な行動"]:
-                good_points.append("具体的な行動が示されています")
-            if "期限の明示" in analysis_result and analysis_result["期限の明示"]:
-                good_points.append("期限が明確に示されています")
-            if "連絡先情報" in analysis_result and analysis_result["連絡先情報"]:
-                good_points.append("連絡先情報が適切に記載されています")
-            
-            if good_points:
-                for point in good_points:
-                    st.markdown(f"✅ {point}")
-            else:
-                st.markdown("⚠️ 特に良い点は見つかりませんでした")
-            
-            # 改善点の表示
-            st.markdown("#### 改善点")
-            if not analysis_result["明確な目的"]:
-                st.markdown("❌ 目的が不明確です。何をすべきか、なぜそれが必要なのかを明確に示してください。")
-            if not analysis_result["具体的な行動"]:
-                st.markdown("❌ 具体的な行動が示されていません。何を、いつ、どのように行うべきかを具体的に説明してください。")
-            if not analysis_result["期限の明示"]:
-                st.markdown("❌ 期限が明示されていません。いつまでに行動すべきかを明確に示してください。")
-            if not analysis_result["連絡先情報"]:
-                st.markdown("❌ 連絡先情報が不足しています。問い合わせ先や担当者を明記してください。")
-            
-            # 改善提案の表示
-            st.markdown("### 改善提案")
-            st.markdown(analysis_result["改善提案"].replace("<br>", "\n\n"), unsafe_allow_html=True)
+            # プロセス全体の最適化アイデア
+            process_ideas = generate_process_optimization_ideas(text, east_analysis, process_map)
+            st.subheader("この文書以外の改善アイデア")
+            st.markdown(process_ideas)
 
 # フッター
 st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">Powered by StepSpin 2025</div>', unsafe_allow_html=True) 
