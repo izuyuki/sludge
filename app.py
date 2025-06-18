@@ -85,7 +85,12 @@ def extract_text_from_pdf(pdf_file):
         pdf_reader = PyPDF2.PdfReader(pdf_file)
         text = ""
         for page in pdf_reader.pages:
-            text += page.extract_text()
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text
+        if not text.strip():
+            st.error("PDFから文章が検出できませんでした。文章が含まれているPDFをアップロードしてください。")
+            return None
         return text
     except Exception as e:
         st.error(f"PDFの読み込みに失敗しました: {str(e)}")
@@ -271,7 +276,7 @@ st.markdown("""
 | あなたの行動ステップ | このツールができること |
 |---------|-------------------|
 | **Step1** チラシなどのPDF文書（１ファイル）をアップロードしてください。 | 文書のターゲット、促したい目標行動、そこに至るプロセスを可視化し、スラッジを特定します。 |
-| **Step2** 診断結果を踏まえて、チラシなどを実際に改善してください。 | すぐに取り組める"重要な改善ポイント５選"を提示します（改善文書の自動生成機能は、現在準備中です）。 |
+| **Step2** 診断結果を踏まえて、チラシなどを実際に改善してください。 | すぐに取り組める"重要な改善ポイント５選"を提示します。 |
 | **Step3** 文書以外の改善ができないか、プロセス全体を見直してください。 | アップロードした文書以外の改善アイデアも提示します。 |
 """, unsafe_allow_html=True)
 
