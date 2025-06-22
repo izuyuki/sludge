@@ -286,43 +286,48 @@ with st.container():
     with col1:
         uploaded_file = st.file_uploader("PDFファイルをここにアップロードしてください", type=['pdf'])
 
+# 診断スタートボタンの表示
 if uploaded_file is not None:
-    with st.spinner("分析中..."):
-        # PDFからテキストを抽出
-        text = extract_text_from_pdf(uploaded_file)
-        if text:
-            # 関連情報の検索
-            related_info = search_related_info(text)
-            
-            # ターゲット分析
-            persona = analyze_persona(text, related_info)
-            st.subheader("想定されるターゲット")
-            st.markdown(persona)
-            
-            # 目標行動の分析
-            target_action = analyze_target_action(text, persona)
-            st.subheader("目標行動")
-            st.markdown(target_action)
-            
-            # 行動プロセスマップの作成
-            process_map = create_action_process_map(text, target_action)
-            st.subheader("行動プロセスマップ")
-            st.markdown(process_map)
-            
-            # スラッジ分析
-            east_analysis = analyze_east_framework(text, process_map)
-            st.subheader("スラッジ分析")
-            st.markdown(east_analysis)
-            
-            # 改善案の生成
-            improvements = generate_improvement_suggestions(text, east_analysis)
-            st.subheader("重要な改善ポイント５選")
-            st.markdown(improvements)
-            
-            # プロセス全体の最適化アイデア
-            process_ideas = generate_process_optimization_ideas(text, east_analysis, process_map)
-            st.subheader("この文書以外の改善アイデア")
-            st.markdown(process_ideas)
+    st.markdown("---")
+    if st.button("診断スタート", type="primary"):
+        with st.spinner("分析中..."):
+            # PDFからテキストを抽出
+            text = extract_text_from_pdf(uploaded_file)
+            if text:
+                # 関連情報の検索
+                related_info = search_related_info(text)
+                
+                # ターゲット分析
+                persona = analyze_persona(text, related_info)
+                st.subheader("想定されるターゲット")
+                st.markdown(persona)
+                
+                # 目標行動の分析
+                target_action = analyze_target_action(text, persona)
+                st.subheader("目標行動")
+                st.markdown(target_action)
+                
+                # 行動プロセスマップの作成
+                process_map = create_action_process_map(text, target_action)
+                st.subheader("行動プロセスマップ")
+                st.markdown(process_map)
+                
+                # スラッジ分析
+                east_analysis = analyze_east_framework(text, process_map)
+                st.subheader("スラッジ分析")
+                st.markdown(east_analysis)
+                
+                # 改善案の生成
+                improvements = generate_improvement_suggestions(text, east_analysis)
+                st.subheader("重要な改善ポイント５選")
+                st.markdown(improvements)
+                
+                # プロセス全体の最適化アイデア
+                process_ideas = generate_process_optimization_ideas(text, east_analysis, process_map)
+                st.subheader("この文書以外の改善アイデア")
+                st.markdown(process_ideas)
+    else:
+        st.info("PDFファイルをアップロードしました。「診断スタート」ボタンを押して分析を開始してください。")
 
 # フッター
 st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">Powered by StepSpin 2025</div>', unsafe_allow_html=True) 
