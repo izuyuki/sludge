@@ -337,143 +337,43 @@ def generate_improvement_suggestions_with_comment(text, east_analysis, user_comm
         st.error(f"再審査の改善案の生成に失敗しました: {str(e)}")
         return None
 
-def markdown_to_story_elements(md_text, style, table_style, available_width):
-    """
-    Converts a markdown string (potentially a table) into a list of ReportLab flowables.
-    """
-    if not isinstance(md_text, str):
-        md_text = str(md_text)
-
-    # Clean up the markdown text
-    md_text = md_text.strip()
-    lines = [l.strip() for l in md_text.split('\n') if l.strip()]
-    
-    is_table = False
-    if len(lines) > 1 and '|' in lines[0] and '---' in lines[1]:
-        is_table = True
-
-    if is_table:
-        data = []
-        header_line = lines.pop(0)
-        separator_line = lines.pop(0) # and remove it
-
-        # Header
-        header_cells = [cell.strip() for cell in header_line.strip('|').split('|')]
-        data.append([Paragraph(cell, style) for cell in header_cells])
-
-        # Body
-        for line in lines:
-            cells = [cell.strip() for cell in line.strip('|').split('|')]
-            data.append([Paragraph(cell, style) for cell in cells])
+def get_pdf_export_button_html(target_id, filename, button_text):
+    button_uuid = f"download-pdf-{hash(filename)}"
+    html = f"""
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<button id="{button_uuid}" style="background-color: #0066cc; color: white; border-radius: 4px; border: none; padding: 0.5rem 1rem; cursor: pointer;">
+    {button_text}
+</button>
+<script>
+document.getElementById("{button_uuid}").addEventListener("click", function() {{
+    const element = document.getElementById('{target_id}');
+    if (element) {{
+        const opt = {{
+            margin:       [0.5, 0.5, 0.5, 0.5],
+            filename:     '{filename}',
+            image:        {{ type: 'jpeg', quality: 0.98 }},
+            html2canvas:  {{ scale: 2, useCORS: true, letterRendering: true, scrollY: 0 }},
+            jsPDF:        {{ unit: 'in', format: 'a4', orientation: 'portrait' }},
+            pagebreak:    {{ mode: ['avoid-all', 'css', 'legacy'] }}
+        }};
+        const reportTitle = "スラスラ診断レポート";
+        const titleEl = document.createElement('h1');
+        titleEl.appendChild(document.createTextNode(reportTitle));
+        titleEl.style.textAlign = 'center';
+        titleEl.style.fontSize = '2rem';
+        titleEl.style.marginBottom = '2rem';
         
-        if not data:
-            return [Paragraph(md_text.replace('\n', '<br/>'), style)]
+        const clonedElement = element.cloneNode(true);
+        clonedElement.insertBefore(titleEl, clonedElement.firstChild);
 
-        try:
-            col_widths = [available_width/len(data[0])] * len(data[0])
-            table = Table(data, hAlign='LEFT', colWidths=col_widths)
-            table.setStyle(table_style)
-            return [table]
-        except Exception:
-             return [Paragraph(md_text.replace('\n', '<br/>'), style)]
-
-    else:
-        # Not a table, just return as a paragraph
-        return [Paragraph(md_text.replace('\n', '<br/>'), style)]
-
-def generate_pdf_report(filename, persona, target_action, process_map, east_analysis, improvements, process_ideas, user_comment=None, east_analysis_with_comment=None, improvements_with_comment=None):
-    """
-    PDFレポートを生成する関数
-    """
-    try:
-        pdfmetrics.registerFont(UnicodeCIDFont('HeiseiMin-W3'))
-        jp_font_name = 'HeiseiMin-W3'
-    except Exception:
-        jp_font_name = 'Helvetica' # Fallback
-
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=inch, leftMargin=inch, topMargin=inch, bottomMargin=inch)
-    story = []
-    
-    # スタイルの設定
-    styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name='Normal_JP', parent=styles['Normal'], fontName=jp_font_name, fontSize=10, leading=14))
-    styles.add(ParagraphStyle(name='Title_JP', parent=styles['h1'], fontName=jp_font_name, fontSize=18, alignment=TA_CENTER, spaceAfter=20))
-    styles.add(ParagraphStyle(name='Heading_JP', parent=styles['h2'], fontName=jp_font_name, fontSize=14, spaceBefore=12, spaceAfter=12))
-    
-    title_style = styles['Title_JP']
-    heading_style = styles['Heading_JP']
-    normal_style = styles['Normal_JP']
-
-    table_style = TableStyle([
-        ('FONTNAME', (0, 0), (-1, -1), jp_font_name),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('LEFTPADDING', (0, 0), (-1, -1), 6),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-    ])
-    
-    available_width = doc.width
-
-    # タイトル
-    story.append(Paragraph("スラスラ診断レポート", title_style))
-    story.append(Spacer(1, 20))
-    
-    # ファイル名と日時
-    story.append(Paragraph(f"<b>ファイル名:</b> {filename}", normal_style))
-    story.append(Paragraph(f"<b>診断日時:</b> {datetime.now().strftime('%Y年%m月%d日 %H:%M')}", normal_style))
-    story.append(Spacer(1, 20))
-    
-    # 各セクション
-    sections = {
-        "想定されるターゲット": persona,
-        "目標行動": target_action,
-        "行動プロセスマップ": process_map,
-        "スラッジ分析": east_analysis,
-        "重要な改善ポイント５選": improvements,
-        "この文書以外の改善アイデア": process_ideas,
-    }
-
-    for title, content in sections.items():
-        story.append(Paragraph(title, heading_style))
-        story.extend(markdown_to_story_elements(content, normal_style, table_style, available_width))
-        story.append(Spacer(1, 15))
-
-    # 再審査結果がある場合
-    if user_comment and user_comment.strip():
-        story.append(Paragraph("診断結果へのフィードバック", heading_style))
-        story.append(Paragraph(f"<b>コメント:</b> {user_comment}", normal_style))
-        story.append(Spacer(1, 15))
-        
-        if east_analysis_with_comment:
-            story.append(Paragraph("再審査：スラッジ分析", heading_style))
-            story.extend(markdown_to_story_elements(east_analysis_with_comment, normal_style, table_style, available_width))
-            story.append(Spacer(1, 15))
-        
-        if improvements_with_comment:
-            story.append(Paragraph("再審査：重要な改善ポイント５選", heading_style))
-            story.extend(markdown_to_story_elements(improvements_with_comment, normal_style, table_style, available_width))
-            story.append(Spacer(1, 15))
-    
-    # PDFを生成
-    doc.build(story)
-    buffer.seek(0)
-    return buffer
-
-def get_pdf_download_link(pdf_buffer, filename):
-    """
-    PDFダウンロードリンクを生成する関数
-    """
-    b64 = base64.b64encode(pdf_buffer.getvalue()).decode()
-    href = f'<a href="data:application/pdf;base64,{b64}" download="{filename}" target="_blank">PDFレポートをダウンロード</a>'
-    return href
+        html2pdf().from(clonedElement).set(opt).save();
+    }} else {{
+        console.error("Element with id '{target_id}' not found.");
+    }}
+}});
+</script>
+"""
+    return html
 
 # Streamlit UI
 # ロゴの表示
@@ -501,6 +401,8 @@ if uploaded_file is not None:
         # PDFからテキストを抽出
         text = extract_text_from_pdf(uploaded_file)
         if text:
+            st.markdown('<div id="report-content">', unsafe_allow_html=True)
+
             # 関連情報の検索
             related_info = search_related_info(text)
             
@@ -534,36 +436,6 @@ if uploaded_file is not None:
             st.subheader("この文書以外の改善アイデア")
             st.markdown(process_ideas)
             
-            # セッション状態に結果を保存
-            st.session_state['analysis_results'] = {
-                'filename': uploaded_file.name,
-                'persona': persona,
-                'target_action': target_action,
-                'process_map': process_map,
-                'east_analysis': east_analysis,
-                'improvements': improvements,
-                'process_ideas': process_ideas
-            }
-            
-            # PDFレポート出力ボタン
-            st.markdown("---")
-            col1, col2 = st.columns([1, 4])
-            with col1:
-                if st.button("PDFレポート出力", type="primary"):
-                    if 'analysis_results' in st.session_state:
-                        results = st.session_state['analysis_results']
-                        pdf_buffer = generate_pdf_report(
-                            results['filename'],
-                            results['persona'],
-                            results['target_action'],
-                            results['process_map'],
-                            results['east_analysis'],
-                            results['improvements'],
-                            results['process_ideas']
-                        )
-                        pdf_filename = f"スラスラ診断レポート_{results['filename'].replace('.pdf', '')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
-                        st.markdown(get_pdf_download_link(pdf_buffer, pdf_filename), unsafe_allow_html=True)
-            
             # ユーザーコメント入力欄と再審査機能
             st.markdown("---")
             st.subheader("診断結果へのフィードバック")
@@ -585,36 +457,25 @@ if uploaded_file is not None:
                         st.markdown(improvements_with_comment)
                         
                         # セッション状態に再審査結果を保存
-                        st.session_state['reanalysis_results'] = {
-                            'user_comment': user_comment,
-                            'east_analysis_with_comment': east_analysis_with_comment,
-                            'improvements_with_comment': improvements_with_comment
-                        }
-                        
-                        # 再審査後のPDFレポート出力ボタン
-                        st.markdown("---")
-                        col1, col2 = st.columns([1, 4])
-                        with col1:
-                            if st.button("再審査結果PDFレポート出力", type="primary"):
-                                if 'analysis_results' in st.session_state and 'reanalysis_results' in st.session_state:
-                                    results = st.session_state['analysis_results']
-                                    reanalysis = st.session_state['reanalysis_results']
-                                    pdf_buffer = generate_pdf_report(
-                                        results['filename'],
-                                        results['persona'],
-                                        results['target_action'],
-                                        results['process_map'],
-                                        results['east_analysis'],
-                                        results['improvements'],
-                                        results['process_ideas'],
-                                        reanalysis['user_comment'],
-                                        reanalysis['east_analysis_with_comment'],
-                                        reanalysis['improvements_with_comment']
-                                    )
-                                    pdf_filename = f"スラスラ診断レポート_再審査_{results['filename'].replace('.pdf', '')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
-                                    st.markdown(get_pdf_download_link(pdf_buffer, pdf_filename), unsafe_allow_html=True)
+                        st.session_state['reanalysis_done'] = True
                 else:
                     st.warning("コメントを入力してから再審査を開始してください。")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("---")
+
+            # PDF出力ボタン
+            if st.session_state.get('reanalysis_done', False):
+                 pdf_filename = f"スラスラ診断レポート_再審査_{uploaded_file.name.replace('.pdf', '')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+                 st.markdown(get_pdf_export_button_html("report-content", pdf_filename, "再審査結果PDFレポート出力"), unsafe_allow_html=True)
+            else:
+                 pdf_filename = f"スラスラ診断レポート_{uploaded_file.name.replace('.pdf', '')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+                 st.markdown(get_pdf_export_button_html("report-content", pdf_filename, "PDFレポート出力"), unsafe_allow_html=True)
+            
+            # Reset flag if new file is uploaded
+            if 'last_uploaded_filename' not in st.session_state or st.session_state.last_uploaded_filename != uploaded_file.name:
+                st.session_state.reanalysis_done = False
+                st.session_state.last_uploaded_filename = uploaded_file.name
 
 # フッター
 st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">Powered by StepSpin 2025</div>', unsafe_allow_html=True) 
