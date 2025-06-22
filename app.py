@@ -7,7 +7,6 @@ import io
 import requests
 from bs4 import BeautifulSoup
 import json
-import pyperclip
 
 # 環境変数の読み込み
 load_dotenv()
@@ -45,17 +44,6 @@ st.markdown("""
     }
     .stButton>button:hover {
         background-color: #0052a3;
-    }
-    .copy-button {
-        background-color: #28a745 !important;
-        color: white !important;
-        border-radius: 4px !important;
-        border: none !important;
-        padding: 0.5rem 1rem !important;
-        margin-top: 0.5rem !important;
-    }
-    .copy-button:hover {
-        background-color: #218838 !important;
     }
     h1 {
         color: #333333;
@@ -311,110 +299,30 @@ if uploaded_file is not None:
             st.subheader("想定されるターゲット")
             st.markdown(persona)
             
-            # コピーボタン
-            if st.button("📋 ターゲット分析結果をコピー", key="copy_persona", help="分析結果をクリップボードにコピーします"):
-                try:
-                    pyperclip.copy(persona)
-                    st.success("ターゲット分析結果をコピーしました！")
-                except Exception as e:
-                    st.error("コピーに失敗しました。手動でコピーしてください。")
-            
             # 目標行動の分析
             target_action = analyze_target_action(text, persona)
             st.subheader("目標行動")
             st.markdown(target_action)
-            
-            # コピーボタン
-            if st.button("📋 目標行動をコピー", key="copy_target_action", help="目標行動をクリップボードにコピーします"):
-                try:
-                    pyperclip.copy(target_action)
-                    st.success("目標行動をコピーしました！")
-                except Exception as e:
-                    st.error("コピーに失敗しました。手動でコピーしてください。")
             
             # 行動プロセスマップの作成
             process_map = create_action_process_map(text, target_action)
             st.subheader("行動プロセスマップ")
             st.markdown(process_map)
             
-            # コピーボタン
-            if st.button("📋 行動プロセスマップをコピー", key="copy_process_map", help="行動プロセスマップをクリップボードにコピーします"):
-                try:
-                    pyperclip.copy(process_map)
-                    st.success("行動プロセスマップをコピーしました！")
-                except Exception as e:
-                    st.error("コピーに失敗しました。手動でコピーしてください。")
-            
             # スラッジ分析
             east_analysis = analyze_east_framework(text, process_map)
             st.subheader("スラッジ分析")
             st.markdown(east_analysis)
-            
-            # コピーボタン
-            if st.button("📋 スラッジ分析結果をコピー", key="copy_east_analysis", help="スラッジ分析結果をクリップボードにコピーします"):
-                try:
-                    pyperclip.copy(east_analysis)
-                    st.success("スラッジ分析結果をコピーしました！")
-                except Exception as e:
-                    st.error("コピーに失敗しました。手動でコピーしてください。")
             
             # 改善案の生成
             improvements = generate_improvement_suggestions(text, east_analysis)
             st.subheader("重要な改善ポイント５選")
             st.markdown(improvements)
             
-            # コピーボタン
-            if st.button("📋 改善ポイントをコピー", key="copy_improvements", help="改善ポイントをクリップボードにコピーします"):
-                try:
-                    pyperclip.copy(improvements)
-                    st.success("改善ポイントをコピーしました！")
-                except Exception as e:
-                    st.error("コピーに失敗しました。手動でコピーしてください。")
-            
             # プロセス全体の最適化アイデア
             process_ideas = generate_process_optimization_ideas(text, east_analysis, process_map)
             st.subheader("この文書以外の改善アイデア")
             st.markdown(process_ideas)
-            
-            # コピーボタン
-            if st.button("📋 改善アイデアをコピー", key="copy_process_ideas", help="改善アイデアをクリップボードにコピーします"):
-                try:
-                    pyperclip.copy(process_ideas)
-                    st.success("改善アイデアをコピーしました！")
-                except Exception as e:
-                    st.error("コピーに失敗しました。手動でコピーしてください。")
-            
-            # 全結果をまとめてコピーするボタン
-            st.markdown("---")
-            st.subheader("📋 全分析結果をまとめてコピー")
-            all_results = f"""
-# スラスラ診断くん - 分析結果
-
-## 想定されるターゲット
-{persona}
-
-## 目標行動
-{target_action}
-
-## 行動プロセスマップ
-{process_map}
-
-## スラッジ分析
-{east_analysis}
-
-## 重要な改善ポイント５選
-{improvements}
-
-## この文書以外の改善アイデア
-{process_ideas}
-            """
-            
-            if st.button("📋 全分析結果をコピー", key="copy_all_results", help="全ての分析結果をまとめてクリップボードにコピーします"):
-                try:
-                    pyperclip.copy(all_results)
-                    st.success("全分析結果をコピーしました！")
-                except Exception as e:
-                    st.error("コピーに失敗しました。手動でコピーしてください。")
 
 # フッター
 st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">Powered by StepSpin 2025</div>', unsafe_allow_html=True) 
