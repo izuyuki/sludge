@@ -13,8 +13,11 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 import base64
 from datetime import datetime
+import re
 
 # 環境変数の読み込み
 load_dotenv()
@@ -334,34 +337,91 @@ def generate_improvement_suggestions_with_comment(text, east_analysis, user_comm
         st.error(f"再審査の改善案の生成に失敗しました: {str(e)}")
         return None
 
+def markdown_to_story_elements(md_text, style, table_style, available_width):
+    """
+    Converts a markdown string (potentially a table) into a list of ReportLab flowables.
+    """
+    if not isinstance(md_text, str):
+        md_text = str(md_text)
+
+    # Clean up the markdown text
+    md_text = md_text.strip()
+    lines = [l.strip() for l in md_text.split('\n') if l.strip()]
+    
+    is_table = False
+    if len(lines) > 1 and '|' in lines[0] and '---' in lines[1]:
+        is_table = True
+
+    if is_table:
+        data = []
+        header_line = lines.pop(0)
+        separator_line = lines.pop(0) # and remove it
+
+        # Header
+        header_cells = [cell.strip() for cell in header_line.strip('|').split('|')]
+        data.append([Paragraph(cell, style) for cell in header_cells])
+
+        # Body
+        for line in lines:
+            cells = [cell.strip() for cell in line.strip('|').split('|')]
+            data.append([Paragraph(cell, style) for cell in cells])
+        
+        if not data:
+            return [Paragraph(md_text.replace('\n', '<br/>'), style)]
+
+        try:
+            col_widths = [available_width/len(data[0])] * len(data[0])
+            table = Table(data, hAlign='LEFT', colWidths=col_widths)
+            table.setStyle(table_style)
+            return [table]
+        except Exception:
+             return [Paragraph(md_text.replace('\n', '<br/>'), style)]
+
+    else:
+        # Not a table, just return as a paragraph
+        return [Paragraph(md_text.replace('\n', '<br/>'), style)]
+
 def generate_pdf_report(filename, persona, target_action, process_map, east_analysis, improvements, process_ideas, user_comment=None, east_analysis_with_comment=None, improvements_with_comment=None):
     """
     PDFレポートを生成する関数
     """
+    try:
+        pdfmetrics.registerFont(UnicodeCIDFont('HeiseiMin-W3'))
+        jp_font_name = 'HeiseiMin-W3'
+    except Exception:
+        jp_font_name = 'Helvetica' # Fallback
+
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=inch, leftMargin=inch, topMargin=inch, bottomMargin=inch)
     story = []
     
     # スタイルの設定
     styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=18,
-        spaceAfter=30,
-        alignment=TA_CENTER,
-        textColor=colors.darkblue
-    )
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=14,
-        spaceAfter=12,
-        spaceBefore=20,
-        textColor=colors.darkblue
-    )
-    normal_style = styles['Normal']
+    styles.add(ParagraphStyle(name='Normal_JP', parent=styles['Normal'], fontName=jp_font_name, fontSize=10, leading=14))
+    styles.add(ParagraphStyle(name='Title_JP', parent=styles['h1'], fontName=jp_font_name, fontSize=18, alignment=TA_CENTER, spaceAfter=20))
+    styles.add(ParagraphStyle(name='Heading_JP', parent=styles['h2'], fontName=jp_font_name, fontSize=14, spaceBefore=12, spaceAfter=12))
     
+    title_style = styles['Title_JP']
+    heading_style = styles['Heading_JP']
+    normal_style = styles['Normal_JP']
+
+    table_style = TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), jp_font_name),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('LEFTPADDING', (0, 0), (-1, -1), 6),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ])
+    
+    available_width = doc.width
+
     # タイトル
     story.append(Paragraph("スラスラ診断レポート", title_style))
     story.append(Spacer(1, 20))
@@ -371,36 +431,21 @@ def generate_pdf_report(filename, persona, target_action, process_map, east_anal
     story.append(Paragraph(f"<b>診断日時:</b> {datetime.now().strftime('%Y年%m月%d日 %H:%M')}", normal_style))
     story.append(Spacer(1, 20))
     
-    # 想定されるターゲット
-    story.append(Paragraph("想定されるターゲット", heading_style))
-    story.append(Paragraph(persona, normal_style))
-    story.append(Spacer(1, 15))
-    
-    # 目標行動
-    story.append(Paragraph("目標行動", heading_style))
-    story.append(Paragraph(target_action, normal_style))
-    story.append(Spacer(1, 15))
-    
-    # 行動プロセスマップ
-    story.append(Paragraph("行動プロセスマップ", heading_style))
-    story.append(Paragraph(process_map, normal_style))
-    story.append(Spacer(1, 15))
-    
-    # スラッジ分析
-    story.append(Paragraph("スラッジ分析", heading_style))
-    story.append(Paragraph(east_analysis, normal_style))
-    story.append(Spacer(1, 15))
-    
-    # 重要な改善ポイント５選
-    story.append(Paragraph("重要な改善ポイント５選", heading_style))
-    story.append(Paragraph(improvements, normal_style))
-    story.append(Spacer(1, 15))
-    
-    # この文書以外の改善アイデア
-    story.append(Paragraph("この文書以外の改善アイデア", heading_style))
-    story.append(Paragraph(process_ideas, normal_style))
-    story.append(Spacer(1, 15))
-    
+    # 各セクション
+    sections = {
+        "想定されるターゲット": persona,
+        "目標行動": target_action,
+        "行動プロセスマップ": process_map,
+        "スラッジ分析": east_analysis,
+        "重要な改善ポイント５選": improvements,
+        "この文書以外の改善アイデア": process_ideas,
+    }
+
+    for title, content in sections.items():
+        story.append(Paragraph(title, heading_style))
+        story.extend(markdown_to_story_elements(content, normal_style, table_style, available_width))
+        story.append(Spacer(1, 15))
+
     # 再審査結果がある場合
     if user_comment and user_comment.strip():
         story.append(Paragraph("診断結果へのフィードバック", heading_style))
@@ -409,12 +454,12 @@ def generate_pdf_report(filename, persona, target_action, process_map, east_anal
         
         if east_analysis_with_comment:
             story.append(Paragraph("再審査：スラッジ分析", heading_style))
-            story.append(Paragraph(east_analysis_with_comment, normal_style))
+            story.extend(markdown_to_story_elements(east_analysis_with_comment, normal_style, table_style, available_width))
             story.append(Spacer(1, 15))
         
         if improvements_with_comment:
             story.append(Paragraph("再審査：重要な改善ポイント５選", heading_style))
-            story.append(Paragraph(improvements_with_comment, normal_style))
+            story.extend(markdown_to_story_elements(improvements_with_comment, normal_style, table_style, available_width))
             story.append(Spacer(1, 15))
     
     # PDFを生成
