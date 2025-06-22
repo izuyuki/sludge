@@ -7,6 +7,13 @@ import io
 import requests
 from bs4 import BeautifulSoup
 import json
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+import datetime
 
 # 環境変数の読み込み
 load_dotenv()
@@ -265,6 +272,92 @@ def generate_process_optimization_ideas(text, east_analysis, process_map):
         st.error(f"プロセス全体の最適化アイデアの生成に失敗しました: {str(e)}")
         return None
 
+def generate_pdf_report(persona, target_action, process_map, east_analysis, improvements, process_ideas, original_text):
+    """診断結果をPDFレポートとして生成する"""
+    try:
+        # PDFファイルを作成
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        story = []
+        
+        # スタイルの設定
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            spaceAfter=20,
+            alignment=TA_CENTER,
+            textColor=colors.darkblue
+        )
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceAfter=12,
+            spaceBefore=20,
+            textColor=colors.darkblue
+        )
+        normal_style = styles['Normal']
+        
+        # タイトル
+        story.append(Paragraph("スラスラ診断くん 診断レポート", title_style))
+        story.append(Spacer(1, 20))
+        
+        # 診断日時
+        current_time = datetime.datetime.now().strftime("%Y年%m月%d日 %H:%M")
+        story.append(Paragraph(f"診断日時: {current_time}", normal_style))
+        story.append(Spacer(1, 20))
+        
+        # 原文書の要約（最初の200文字）
+        story.append(Paragraph("原文書の要約", heading_style))
+        summary_text = original_text[:200] + "..." if len(original_text) > 200 else original_text
+        story.append(Paragraph(summary_text, normal_style))
+        story.append(Spacer(1, 15))
+        
+        # 想定されるターゲット
+        story.append(Paragraph("想定されるターゲット", heading_style))
+        story.append(Paragraph(persona, normal_style))
+        story.append(Spacer(1, 15))
+        
+        # 目標行動
+        story.append(Paragraph("目標行動", heading_style))
+        story.append(Paragraph(target_action, normal_style))
+        story.append(Spacer(1, 15))
+        
+        # 行動プロセスマップ
+        story.append(Paragraph("行動プロセスマップ", heading_style))
+        story.append(Paragraph(process_map, normal_style))
+        story.append(Spacer(1, 15))
+        
+        # スラッジ分析
+        story.append(Paragraph("スラッジ分析", heading_style))
+        story.append(Paragraph(east_analysis, normal_style))
+        story.append(Spacer(1, 15))
+        
+        # 重要な改善ポイント５選
+        story.append(Paragraph("重要な改善ポイント５選", heading_style))
+        story.append(Paragraph(improvements, normal_style))
+        story.append(Spacer(1, 15))
+        
+        # この文書以外の改善アイデア
+        story.append(Paragraph("この文書以外の改善アイデア", heading_style))
+        story.append(Paragraph(process_ideas, normal_style))
+        story.append(Spacer(1, 20))
+        
+        # フッター
+        story.append(Paragraph("Powered by StepSpin 2025", normal_style))
+        
+        # PDFを生成
+        doc.build(story)
+        buffer.seek(0)
+        
+        return buffer
+        
+    except Exception as e:
+        st.error(f"PDFの生成に失敗しました: {str(e)}")
+        return None
+
 # Streamlit UI
 # ロゴの表示
 st.image("logo.png", width=100)
@@ -323,6 +416,52 @@ if uploaded_file is not None:
             process_ideas = generate_process_optimization_ideas(text, east_analysis, process_map)
             st.subheader("この文書以外の改善アイデア")
             st.markdown(process_ideas)
+            
+            # 診断結果をセッション状態に保存
+            st.session_state.diagnosis_complete = True
+            st.session_state.diagnosis_results = {
+                'persona': persona,
+                'target_action': target_action,
+                'process_map': process_map,
+                'east_analysis': east_analysis,
+                'improvements': improvements,
+                'process_ideas': process_ideas,
+                'original_text': text
+            }
+
+# 診断が完了した場合、PDF出力ボタンを表示
+if st.session_state.get('diagnosis_complete', False):
+    st.markdown("---")
+    st.subheader("📄 診断レポート出力")
+    st.markdown("診断結果をPDFレポートとしてダウンロードできます。")
+    
+    if st.button("診断レポート出力", type="primary"):
+        with st.spinner("PDFを生成中..."):
+            results = st.session_state.diagnosis_results
+            pdf_buffer = generate_pdf_report(
+                results['persona'],
+                results['target_action'],
+                results['process_map'],
+                results['east_analysis'],
+                results['improvements'],
+                results['process_ideas'],
+                results['original_text']
+            )
+            
+            if pdf_buffer:
+                # ファイル名を生成（現在の日時を含む）
+                current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"スラスラ診断レポート_{current_time}.pdf"
+                
+                # PDFをダウンロード可能にする
+                st.download_button(
+                    label="📥 PDFをダウンロード",
+                    data=pdf_buffer.getvalue(),
+                    file_name=filename,
+                    mime="application/pdf",
+                    type="primary"
+                )
+                st.success("PDFレポートが生成されました。上記のボタンからダウンロードしてください。")
 
 # フッター
 st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">Powered by StepSpin 2025</div>', unsafe_allow_html=True) 
