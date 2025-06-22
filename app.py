@@ -88,6 +88,20 @@ st.markdown("""
         color: #666666;
         margin-bottom: 1rem;
     }
+    @media print {
+        .main > div:first-child {
+            display: none; /* ヘッダーやアップロードエリアを非表示 */
+        }
+        .stButton, .stTextArea, #feedback-section {
+            display: none !important; /* ボタン、テキストエリア、フィードバックセクションを非表示 */
+        }
+        #report-content {
+            padding-top: 0 !important;
+        }
+        h1, h2, h3, h4, h5, h6 {
+             color: black !important;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -337,38 +351,41 @@ def generate_improvement_suggestions_with_comment(text, east_analysis, user_comm
         st.error(f"再審査の改善案の生成に失敗しました: {str(e)}")
         return None
 
-def get_pdf_export_button_html(target_id, filename, button_text):
-    button_uuid = f"download-pdf-{hash(filename)}"
+def get_pdf_print_button(button_text):
+    """
+    Generates a button that triggers the browser's print dialog.
+    """
+    button_uuid = f"print-button-{hash(button_text)}"
     html = f"""
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <button id="{button_uuid}" style="background-color: #0066cc; color: white; border-radius: 4px; border: none; padding: 0.5rem 1rem; cursor: pointer;">
     {button_text}
 </button>
 <script>
 document.getElementById("{button_uuid}").addEventListener("click", function() {{
-    const element = document.getElementById('{target_id}');
-    if (element) {{
-        const opt = {{
-            margin:       [0.5, 0.5, 0.5, 0.5],
-            filename:     '{filename}',
-            image:        {{ type: 'jpeg', quality: 0.98 }},
-            html2canvas:  {{ scale: 2, useCORS: true, letterRendering: true, scrollY: 0 }},
-            jsPDF:        {{ unit: 'in', format: 'a4', orientation: 'portrait' }},
-            pagebreak:    {{ mode: ['avoid-all', 'css', 'legacy'] }}
-        }};
-        const reportTitle = "スラスラ診断レポート";
-        const titleEl = document.createElement('h1');
-        titleEl.appendChild(document.createTextNode(reportTitle));
-        titleEl.style.textAlign = 'center';
-        titleEl.style.fontSize = '2rem';
-        titleEl.style.marginBottom = '2rem';
-        
-        const clonedElement = element.cloneNode(true);
-        clonedElement.insertBefore(titleEl, clonedElement.firstChild);
+    const reportTitle = "スラスラ診断レポート";
+    
+    // Create a title element to be prepended
+    const titleEl = document.createElement('h1');
+    titleEl.innerText = reportTitle;
+    titleEl.style.textAlign = 'center';
+    titleEl.style.fontSize = '2rem';
+    titleEl.style.marginBottom = '2rem';
+    titleEl.id = 'print-title'; // Give it an ID
+    
+    // Prepend the title to the report content
+    const reportContent = document.getElementById('report-content');
+    if (reportContent) {{
+        reportContent.prepend(titleEl);
+    }}
 
-        html2pdf().from(clonedElement).set(opt).save();
-    }} else {{
-        console.error("Element with id '{target_id}' not found.");
+    window.print();
+
+    // Remove the title after printing
+    if (reportContent) {{
+        const addedTitle = document.getElementById('print-title');
+        if (addedTitle) {{
+            reportContent.removeChild(addedTitle);
+        }}
     }}
 }});
 </script>
@@ -436,45 +453,62 @@ if uploaded_file is not None:
             st.subheader("この文書以外の改善アイデア")
             st.markdown(process_ideas)
             
-            # ユーザーコメント入力欄と再審査機能
-            st.markdown("---")
-            st.subheader("診断結果へのフィードバック")
-            st.markdown("診断結果について、ご意見やご要望があればお聞かせください。")
-            
-            user_comment = st.text_area("コメントを入力してください（任意）", height=100)
-            
-            if st.button("再審査スタート", type="primary"):
-                if user_comment.strip():
-                    with st.spinner("再審査中..."):
-                        # ユーザーコメントを踏まえたスラッジ分析
-                        east_analysis_with_comment = analyze_east_framework_with_comment(text, process_map, user_comment)
-                        st.subheader("再審査：スラッジ分析")
-                        st.markdown(east_analysis_with_comment)
-                        
-                        # ユーザーコメントを踏まえた改善案の生成
-                        improvements_with_comment = generate_improvement_suggestions_with_comment(text, east_analysis_with_comment, user_comment)
-                        st.subheader("再審査：重要な改善ポイント５選")
-                        st.markdown(improvements_with_comment)
-                        
-                        # セッション状態に再審査結果を保存
-                        st.session_state['reanalysis_done'] = True
-                else:
-                    st.warning("コメントを入力してから再審査を開始してください。")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-            st.markdown("---")
+            st.markdown('</div>', unsafe_allow_html=True) # report-contentをここで閉じる
 
+            # ユーザーコメント入力欄と再審査機能
+            with st.container():
+                st.markdown('<div id="feedback-section">', unsafe_allow_html=True)
+                st.markdown("---")
+                st.subheader("診断結果へのフィードバック")
+                st.markdown("診断結果について、ご意見やご要望があればお聞かせください。")
+                
+                user_comment = st.text_area("コメントを入力してください（任意）", height=100, key=f"comment_{uploaded_file.name}")
+                
+                if st.button("再審査スタート", type="primary"):
+                    if user_comment.strip():
+                        st.session_state.user_comment = user_comment
+                        st.session_state.reanalysis_triggered = True
+                        st.rerun() # Rerun to show re-analysis results
+                    else:
+                        st.warning("コメントを入力してから再審査を開始してください。")
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            # 再審査の表示
+            if st.session_state.get('reanalysis_triggered', False) and 'report-content' in st.session_state:
+                with st.spinner("再審査中..."):
+                    st.markdown('<div id="report-content-reanalyzed">', unsafe_allow_html=True)
+                    text = st.session_state.text
+                    process_map = st.session_state.process_map
+                    user_comment = st.session_state.user_comment
+                    # ユーザーコメントを踏まえたスラッジ分析
+                    east_analysis_with_comment = analyze_east_framework_with_comment(text, process_map, user_comment)
+                    st.subheader("再審査：スラッジ分析")
+                    st.markdown(east_analysis_with_comment)
+                    
+                    # ユーザーコメントを踏まえた改善案の生成
+                    improvements_with_comment = generate_improvement_suggestions_with_comment(text, east_analysis_with_comment, user_comment)
+                    st.subheader("再審査：重要な改善ポイント５選")
+                    st.markdown(improvements_with_comment)
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    st.session_state['reanalysis_done'] = True
+                    st.session_state.reanalysis_triggered = False # Reset trigger
+
+            st.markdown("---")
             # PDF出力ボタン
             if st.session_state.get('reanalysis_done', False):
-                 pdf_filename = f"スラスラ診断レポート_再審査_{uploaded_file.name.replace('.pdf', '')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
-                 st.markdown(get_pdf_export_button_html("report-content", pdf_filename, "再審査結果PDFレポート出力"), unsafe_allow_html=True)
+                 st.markdown(get_pdf_print_button("再審査結果PDFレポート出力"), unsafe_allow_html=True)
             else:
-                 pdf_filename = f"スラスラ診断レポート_{uploaded_file.name.replace('.pdf', '')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
-                 st.markdown(get_pdf_export_button_html("report-content", pdf_filename, "PDFレポート出力"), unsafe_allow_html=True)
+                 st.markdown(get_pdf_print_button("PDFレポート出力"), unsafe_allow_html=True)
+
+            # セッションステートの管理
+            st.session_state.text = text
+            st.session_state.process_map = process_map
             
             # Reset flag if new file is uploaded
             if 'last_uploaded_filename' not in st.session_state or st.session_state.last_uploaded_filename != uploaded_file.name:
                 st.session_state.reanalysis_done = False
+                st.session_state.reanalysis_triggered = False
+                st.session_state.user_comment = ""
                 st.session_state.last_uploaded_filename = uploaded_file.name
 
 # フッター
