@@ -265,6 +265,67 @@ def generate_process_optimization_ideas(text, east_analysis, process_map):
         st.error(f"プロセス全体の最適化アイデアの生成に失敗しました: {str(e)}")
         return None
 
+def analyze_east_framework_with_comment(text, process_map, user_comment):
+    prompt = f"""
+    ユーザーのコメントを踏まえて、スラッジの観点から以下の情報を再分析してください。
+    ※ここでは改善案や提案は出さず、分析のみを行ってください。
+    
+    文書内容：
+    {text}
+    
+    行動プロセスマップ：
+    {process_map}
+    
+    ユーザーコメント：
+    {user_comment}
+    
+    以下の3観点について、必ずMarkdown表（| 項目 | チェック内容 | 分析結果 |）で出力してください。
+    各「分析結果」は必ず箇条書きでまとめてください。
+    <br>などのHTMLタグや特殊記号は使わず、純粋なMarkdown表で出力してください。
+    | 項目 | チェック内容 | 分析結果 |
+    |------|------------|----------|
+    | 1. 情報の簡潔性 | 真に必要な情報に限定されているか。難解な言葉や冗長な文章が使われてないか。 |  |
+    | 2. 情報の構造性 | 情報は項目ごとに整理され、視覚的にわかりやすく、優先度や時系列にそって配置されているか。情報の重複はないか。 |  |
+    | 3. 動作指示の明確性 | いつ、どこで、誰が、どのように行動すべきか明確に記載されているか |  |
+    """
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"再審査のスラッジ分析に失敗しました: {str(e)}")
+        return None
+
+def generate_improvement_suggestions_with_comment(text, east_analysis, user_comment):
+    prompt = f"""
+    ユーザーのコメントを踏まえて、以下の分析結果を基に、文書の改善案を再提案してください：
+    
+    原文書：
+    {text}
+    
+    スラッジ分析：
+    {east_analysis}
+    
+    ユーザーコメント：
+    {user_comment}
+    
+    以下の観点を踏まえ、Easy（簡単さ）に特化した重要な改善ポイント5つを厳選し、①～⑤の番号を振って、必ずMarkdown表（| 改善ポイント | 具体的な改善案 |）で出力してください。
+    各「具体的な改善案」は必ず箇条書きでまとめてください。
+    <br>などのHTMLタグや特殊記号は使わず、純粋なMarkdown表で出力してください。
+    | 改善ポイント | 具体的な改善案 |
+    |------------|----------------|
+    | ①  |  |
+    | ②  |  |
+    | ③  |  |
+    | ④  |  |
+    | ⑤  |  |
+    """
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"再審査の改善案の生成に失敗しました: {str(e)}")
+        return None
+
 # Streamlit UI
 # ロゴの表示
 st.image("logo.png", width=100)
@@ -286,48 +347,65 @@ with st.container():
     with col1:
         uploaded_file = st.file_uploader("PDFファイルをここにアップロードしてください", type=['pdf'])
 
-# 診断スタートボタンの表示
 if uploaded_file is not None:
-    st.markdown("---")
-    if st.button("診断スタート", type="primary"):
-        with st.spinner("分析中..."):
-            # PDFからテキストを抽出
-            text = extract_text_from_pdf(uploaded_file)
-            if text:
-                # 関連情報の検索
-                related_info = search_related_info(text)
-                
-                # ターゲット分析
-                persona = analyze_persona(text, related_info)
-                st.subheader("想定されるターゲット")
-                st.markdown(persona)
-                
-                # 目標行動の分析
-                target_action = analyze_target_action(text, persona)
-                st.subheader("目標行動")
-                st.markdown(target_action)
-                
-                # 行動プロセスマップの作成
-                process_map = create_action_process_map(text, target_action)
-                st.subheader("行動プロセスマップ")
-                st.markdown(process_map)
-                
-                # スラッジ分析
-                east_analysis = analyze_east_framework(text, process_map)
-                st.subheader("スラッジ分析")
-                st.markdown(east_analysis)
-                
-                # 改善案の生成
-                improvements = generate_improvement_suggestions(text, east_analysis)
-                st.subheader("重要な改善ポイント５選")
-                st.markdown(improvements)
-                
-                # プロセス全体の最適化アイデア
-                process_ideas = generate_process_optimization_ideas(text, east_analysis, process_map)
-                st.subheader("この文書以外の改善アイデア")
-                st.markdown(process_ideas)
-    else:
-        st.info("PDFファイルをアップロードしました。「診断スタート」ボタンを押して分析を開始してください。")
+    with st.spinner("分析中..."):
+        # PDFからテキストを抽出
+        text = extract_text_from_pdf(uploaded_file)
+        if text:
+            # 関連情報の検索
+            related_info = search_related_info(text)
+            
+            # ターゲット分析
+            persona = analyze_persona(text, related_info)
+            st.subheader("想定されるターゲット")
+            st.markdown(persona)
+            
+            # 目標行動の分析
+            target_action = analyze_target_action(text, persona)
+            st.subheader("目標行動")
+            st.markdown(target_action)
+            
+            # 行動プロセスマップの作成
+            process_map = create_action_process_map(text, target_action)
+            st.subheader("行動プロセスマップ")
+            st.markdown(process_map)
+            
+            # スラッジ分析
+            east_analysis = analyze_east_framework(text, process_map)
+            st.subheader("スラッジ分析")
+            st.markdown(east_analysis)
+            
+            # 改善案の生成
+            improvements = generate_improvement_suggestions(text, east_analysis)
+            st.subheader("重要な改善ポイント５選")
+            st.markdown(improvements)
+            
+            # プロセス全体の最適化アイデア
+            process_ideas = generate_process_optimization_ideas(text, east_analysis, process_map)
+            st.subheader("この文書以外の改善アイデア")
+            st.markdown(process_ideas)
+            
+            # ユーザーコメント入力欄と再審査機能
+            st.markdown("---")
+            st.subheader("診断結果へのフィードバック")
+            st.markdown("診断結果について、ご意見やご要望があればお聞かせください。")
+            
+            user_comment = st.text_area("コメントを入力してください（任意）", height=100)
+            
+            if st.button("再審査スタート", type="primary"):
+                if user_comment.strip():
+                    with st.spinner("再審査中..."):
+                        # ユーザーコメントを踏まえたスラッジ分析
+                        east_analysis_with_comment = analyze_east_framework_with_comment(text, process_map, user_comment)
+                        st.subheader("再審査：スラッジ分析")
+                        st.markdown(east_analysis_with_comment)
+                        
+                        # ユーザーコメントを踏まえた改善案の生成
+                        improvements_with_comment = generate_improvement_suggestions_with_comment(text, east_analysis_with_comment, user_comment)
+                        st.subheader("再審査：重要な改善ポイント５選")
+                        st.markdown(improvements_with_comment)
+                else:
+                    st.warning("コメントを入力してから再審査を開始してください。")
 
 # フッター
 st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">Powered by StepSpin 2025</div>', unsafe_allow_html=True) 
