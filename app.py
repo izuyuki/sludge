@@ -299,6 +299,7 @@ def generate_pdf_report(persona, target_action, process_map, east_analysis, impr
             textColor=colors.darkblue
         )
         normal_style = styles['Normal']
+        normal_style.wordWrap = 'CJK' # 日本語の改行を適切に行う
         
         # タイトル
         story.append(Paragraph("スラスラ診断くん 診断レポート", title_style))
@@ -312,37 +313,37 @@ def generate_pdf_report(persona, target_action, process_map, east_analysis, impr
         # 原文書の要約（最初の200文字）
         story.append(Paragraph("原文書の要約", heading_style))
         summary_text = original_text[:200] + "..." if len(original_text) > 200 else original_text
-        story.append(Paragraph(summary_text, normal_style))
+        story.append(Paragraph(summary_text.replace('<br>', '<br/>'), normal_style))
         story.append(Spacer(1, 15))
         
         # 想定されるターゲット
         story.append(Paragraph("想定されるターゲット", heading_style))
-        story.append(Paragraph(persona, normal_style))
+        story.append(Paragraph(persona.replace('<br>', '<br/>'), normal_style))
         story.append(Spacer(1, 15))
         
         # 目標行動
         story.append(Paragraph("目標行動", heading_style))
-        story.append(Paragraph(target_action, normal_style))
+        story.append(Paragraph(target_action.replace('<br>', '<br/>'), normal_style))
         story.append(Spacer(1, 15))
         
         # 行動プロセスマップ
         story.append(Paragraph("行動プロセスマップ", heading_style))
-        story.append(Paragraph(process_map, normal_style))
+        story.append(Paragraph(process_map.replace('<br>', '<br/>'), normal_style))
         story.append(Spacer(1, 15))
         
         # スラッジ分析
         story.append(Paragraph("スラッジ分析", heading_style))
-        story.append(Paragraph(east_analysis, normal_style))
+        story.append(Paragraph(east_analysis.replace('<br>', '<br/>'), normal_style))
         story.append(Spacer(1, 15))
         
         # 重要な改善ポイント５選
         story.append(Paragraph("重要な改善ポイント５選", heading_style))
-        story.append(Paragraph(improvements, normal_style))
+        story.append(Paragraph(improvements.replace('<br>', '<br/>'), normal_style))
         story.append(Spacer(1, 15))
         
         # この文書以外の改善アイデア
         story.append(Paragraph("この文書以外の改善アイデア", heading_style))
-        story.append(Paragraph(process_ideas, normal_style))
+        story.append(Paragraph(process_ideas.replace('<br>', '<br/>'), normal_style))
         story.append(Spacer(1, 20))
         
         # フッター
