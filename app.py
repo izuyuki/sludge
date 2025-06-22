@@ -7,6 +7,14 @@ import io
 import requests
 from bs4 import BeautifulSoup
 import json
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+import base64
+from datetime import datetime
 
 # 環境変数の読み込み
 load_dotenv()
@@ -326,6 +334,102 @@ def generate_improvement_suggestions_with_comment(text, east_analysis, user_comm
         st.error(f"再審査の改善案の生成に失敗しました: {str(e)}")
         return None
 
+def generate_pdf_report(filename, persona, target_action, process_map, east_analysis, improvements, process_ideas, user_comment=None, east_analysis_with_comment=None, improvements_with_comment=None):
+    """
+    PDFレポートを生成する関数
+    """
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    story = []
+    
+    # スタイルの設定
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        textColor=colors.darkblue
+    )
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=12,
+        spaceBefore=20,
+        textColor=colors.darkblue
+    )
+    normal_style = styles['Normal']
+    
+    # タイトル
+    story.append(Paragraph("スラスラ診断レポート", title_style))
+    story.append(Spacer(1, 20))
+    
+    # ファイル名と日時
+    story.append(Paragraph(f"<b>ファイル名:</b> {filename}", normal_style))
+    story.append(Paragraph(f"<b>診断日時:</b> {datetime.now().strftime('%Y年%m月%d日 %H:%M')}", normal_style))
+    story.append(Spacer(1, 20))
+    
+    # 想定されるターゲット
+    story.append(Paragraph("想定されるターゲット", heading_style))
+    story.append(Paragraph(persona, normal_style))
+    story.append(Spacer(1, 15))
+    
+    # 目標行動
+    story.append(Paragraph("目標行動", heading_style))
+    story.append(Paragraph(target_action, normal_style))
+    story.append(Spacer(1, 15))
+    
+    # 行動プロセスマップ
+    story.append(Paragraph("行動プロセスマップ", heading_style))
+    story.append(Paragraph(process_map, normal_style))
+    story.append(Spacer(1, 15))
+    
+    # スラッジ分析
+    story.append(Paragraph("スラッジ分析", heading_style))
+    story.append(Paragraph(east_analysis, normal_style))
+    story.append(Spacer(1, 15))
+    
+    # 重要な改善ポイント５選
+    story.append(Paragraph("重要な改善ポイント５選", heading_style))
+    story.append(Paragraph(improvements, normal_style))
+    story.append(Spacer(1, 15))
+    
+    # この文書以外の改善アイデア
+    story.append(Paragraph("この文書以外の改善アイデア", heading_style))
+    story.append(Paragraph(process_ideas, normal_style))
+    story.append(Spacer(1, 15))
+    
+    # 再審査結果がある場合
+    if user_comment and user_comment.strip():
+        story.append(Paragraph("診断結果へのフィードバック", heading_style))
+        story.append(Paragraph(f"<b>コメント:</b> {user_comment}", normal_style))
+        story.append(Spacer(1, 15))
+        
+        if east_analysis_with_comment:
+            story.append(Paragraph("再審査：スラッジ分析", heading_style))
+            story.append(Paragraph(east_analysis_with_comment, normal_style))
+            story.append(Spacer(1, 15))
+        
+        if improvements_with_comment:
+            story.append(Paragraph("再審査：重要な改善ポイント５選", heading_style))
+            story.append(Paragraph(improvements_with_comment, normal_style))
+            story.append(Spacer(1, 15))
+    
+    # PDFを生成
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
+def get_pdf_download_link(pdf_buffer, filename):
+    """
+    PDFダウンロードリンクを生成する関数
+    """
+    b64 = base64.b64encode(pdf_buffer.getvalue()).decode()
+    href = f'<a href="data:application/pdf;base64,{b64}" download="{filename}" target="_blank">PDFレポートをダウンロード</a>'
+    return href
+
 # Streamlit UI
 # ロゴの表示
 st.image("logo.png", width=100)
@@ -385,6 +489,36 @@ if uploaded_file is not None:
             st.subheader("この文書以外の改善アイデア")
             st.markdown(process_ideas)
             
+            # セッション状態に結果を保存
+            st.session_state['analysis_results'] = {
+                'filename': uploaded_file.name,
+                'persona': persona,
+                'target_action': target_action,
+                'process_map': process_map,
+                'east_analysis': east_analysis,
+                'improvements': improvements,
+                'process_ideas': process_ideas
+            }
+            
+            # PDFレポート出力ボタン
+            st.markdown("---")
+            col1, col2 = st.columns([1, 4])
+            with col1:
+                if st.button("PDFレポート出力", type="primary"):
+                    if 'analysis_results' in st.session_state:
+                        results = st.session_state['analysis_results']
+                        pdf_buffer = generate_pdf_report(
+                            results['filename'],
+                            results['persona'],
+                            results['target_action'],
+                            results['process_map'],
+                            results['east_analysis'],
+                            results['improvements'],
+                            results['process_ideas']
+                        )
+                        pdf_filename = f"スラスラ診断レポート_{results['filename'].replace('.pdf', '')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+                        st.markdown(get_pdf_download_link(pdf_buffer, pdf_filename), unsafe_allow_html=True)
+            
             # ユーザーコメント入力欄と再審査機能
             st.markdown("---")
             st.subheader("診断結果へのフィードバック")
@@ -404,6 +538,36 @@ if uploaded_file is not None:
                         improvements_with_comment = generate_improvement_suggestions_with_comment(text, east_analysis_with_comment, user_comment)
                         st.subheader("再審査：重要な改善ポイント５選")
                         st.markdown(improvements_with_comment)
+                        
+                        # セッション状態に再審査結果を保存
+                        st.session_state['reanalysis_results'] = {
+                            'user_comment': user_comment,
+                            'east_analysis_with_comment': east_analysis_with_comment,
+                            'improvements_with_comment': improvements_with_comment
+                        }
+                        
+                        # 再審査後のPDFレポート出力ボタン
+                        st.markdown("---")
+                        col1, col2 = st.columns([1, 4])
+                        with col1:
+                            if st.button("再審査結果PDFレポート出力", type="primary"):
+                                if 'analysis_results' in st.session_state and 'reanalysis_results' in st.session_state:
+                                    results = st.session_state['analysis_results']
+                                    reanalysis = st.session_state['reanalysis_results']
+                                    pdf_buffer = generate_pdf_report(
+                                        results['filename'],
+                                        results['persona'],
+                                        results['target_action'],
+                                        results['process_map'],
+                                        results['east_analysis'],
+                                        results['improvements'],
+                                        results['process_ideas'],
+                                        reanalysis['user_comment'],
+                                        reanalysis['east_analysis_with_comment'],
+                                        reanalysis['improvements_with_comment']
+                                    )
+                                    pdf_filename = f"スラスラ診断レポート_再審査_{results['filename'].replace('.pdf', '')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+                                    st.markdown(get_pdf_download_link(pdf_buffer, pdf_filename), unsafe_allow_html=True)
                 else:
                     st.warning("コメントを入力してから再審査を開始してください。")
 
