@@ -7,8 +7,6 @@ import io
 import requests
 from bs4 import BeautifulSoup
 import json
-from datetime import datetime
-import re
 
 # 環境変数の読み込み
 load_dotenv()
@@ -78,20 +76,6 @@ st.markdown("""
         line-height: 1.6;
         color: #666666;
         margin-bottom: 1rem;
-    }
-    @media print {
-        .main > div:first-child {
-            display: none; /* ヘッダーやアップロードエリアを非表示 */
-        }
-        .stButton, .stTextArea, #feedback-section {
-            display: none !important; /* ボタン、テキストエリア、フィードバックセクションを非表示 */
-        }
-        #report-content {
-            padding-top: 0 !important;
-        }
-        h1, h2, h3, h4, h5, h6 {
-             color: black !important;
-        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -281,108 +265,6 @@ def generate_process_optimization_ideas(text, east_analysis, process_map):
         st.error(f"プロセス全体の最適化アイデアの生成に失敗しました: {str(e)}")
         return None
 
-def analyze_east_framework_with_comment(text, process_map, user_comment):
-    prompt = f"""
-    ユーザーのコメントを踏まえて、スラッジの観点から以下の情報を再分析してください。
-    ※ここでは改善案や提案は出さず、分析のみを行ってください。
-    
-    文書内容：
-    {text}
-    
-    行動プロセスマップ：
-    {process_map}
-    
-    ユーザーコメント：
-    {user_comment}
-    
-    以下の3観点について、必ずMarkdown表（| 項目 | チェック内容 | 分析結果 |）で出力してください。
-    各「分析結果」は必ず箇条書きでまとめてください。
-    <br>などのHTMLタグや特殊記号は使わず、純粋なMarkdown表で出力してください。
-    | 項目 | チェック内容 | 分析結果 |
-    |------|------------|----------|
-    | 1. 情報の簡潔性 | 真に必要な情報に限定されているか。難解な言葉や冗長な文章が使われてないか。 |  |
-    | 2. 情報の構造性 | 情報は項目ごとに整理され、視覚的にわかりやすく、優先度や時系列にそって配置されているか。情報の重複はないか。 |  |
-    | 3. 動作指示の明確性 | いつ、どこで、誰が、どのように行動すべきか明確に記載されているか |  |
-    """
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        st.error(f"再審査のスラッジ分析に失敗しました: {str(e)}")
-        return None
-
-def generate_improvement_suggestions_with_comment(text, east_analysis, user_comment):
-    prompt = f"""
-    ユーザーのコメントを踏まえて、以下の分析結果を基に、文書の改善案を再提案してください：
-    
-    原文書：
-    {text}
-    
-    スラッジ分析：
-    {east_analysis}
-    
-    ユーザーコメント：
-    {user_comment}
-    
-    以下の観点を踏まえ、Easy（簡単さ）に特化した重要な改善ポイント5つを厳選し、①～⑤の番号を振って、必ずMarkdown表（| 改善ポイント | 具体的な改善案 |）で出力してください。
-    各「具体的な改善案」は必ず箇条書きでまとめてください。
-    <br>などのHTMLタグや特殊記号は使わず、純粋なMarkdown表で出力してください。
-    | 改善ポイント | 具体的な改善案 |
-    |------------|----------------|
-    | ①  |  |
-    | ②  |  |
-    | ③  |  |
-    | ④  |  |
-    | ⑤  |  |
-    """
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        st.error(f"再審査の改善案の生成に失敗しました: {str(e)}")
-        return None
-
-def get_pdf_print_button(button_text):
-    """
-    Generates a button that triggers the browser's print dialog.
-    """
-    button_uuid = f"print-button-{hash(button_text)}"
-    html = f"""
-<button id="{button_uuid}" style="background-color: #0066cc; color: white; border-radius: 4px; border: none; padding: 0.5rem 1rem; cursor: pointer;">
-    {button_text}
-</button>
-<script>
-document.getElementById("{button_uuid}").addEventListener("click", function() {{
-    const reportTitle = "スラスラ診断レポート";
-    
-    // Create a title element to be prepended
-    const titleEl = document.createElement('h1');
-    titleEl.innerText = reportTitle;
-    titleEl.style.textAlign = 'center';
-    titleEl.style.fontSize = '2rem';
-    titleEl.style.marginBottom = '2rem';
-    titleEl.id = 'print-title'; // Give it an ID
-    
-    // Prepend the title to the report content
-    const reportContent = document.getElementById('report-content');
-    if (reportContent) {{
-        reportContent.prepend(titleEl);
-    }}
-
-    window.print();
-
-    // Remove the title after printing
-    if (reportContent) {{
-        const addedTitle = document.getElementById('print-title');
-        if (addedTitle) {{
-            reportContent.removeChild(addedTitle);
-        }}
-    }}
-}});
-</script>
-"""
-    return html
-
 # Streamlit UI
 # ロゴの表示
 st.image("logo.png", width=100)
@@ -409,8 +291,6 @@ if uploaded_file is not None:
         # PDFからテキストを抽出
         text = extract_text_from_pdf(uploaded_file)
         if text:
-            st.markdown('<div id="report-content">', unsafe_allow_html=True)
-
             # 関連情報の検索
             related_info = search_related_info(text)
             
@@ -443,64 +323,6 @@ if uploaded_file is not None:
             process_ideas = generate_process_optimization_ideas(text, east_analysis, process_map)
             st.subheader("この文書以外の改善アイデア")
             st.markdown(process_ideas)
-            
-            st.markdown('</div>', unsafe_allow_html=True) # report-contentをここで閉じる
-
-            # ユーザーコメント入力欄と再審査機能
-            with st.container():
-                st.markdown('<div id="feedback-section">', unsafe_allow_html=True)
-                st.markdown("---")
-                st.subheader("診断結果へのフィードバック")
-                st.markdown("診断結果について、ご意見やご要望があればお聞かせください。")
-                
-                user_comment = st.text_area("コメントを入力してください（任意）", height=100, key=f"comment_{uploaded_file.name}")
-                
-                if st.button("再審査スタート", type="primary"):
-                    if user_comment.strip():
-                        st.session_state.user_comment = user_comment
-                        st.session_state.reanalysis_triggered = True
-                        st.rerun() # Rerun to show re-analysis results
-                    else:
-                        st.warning("コメントを入力してから再審査を開始してください。")
-                st.markdown('</div>', unsafe_allow_html=True)
-
-            # 再審査の表示
-            if st.session_state.get('reanalysis_triggered', False) and 'report-content' in st.session_state:
-                with st.spinner("再審査中..."):
-                    st.markdown('<div id="report-content-reanalyzed">', unsafe_allow_html=True)
-                    text = st.session_state.text
-                    process_map = st.session_state.process_map
-                    user_comment = st.session_state.user_comment
-                    # ユーザーコメントを踏まえたスラッジ分析
-                    east_analysis_with_comment = analyze_east_framework_with_comment(text, process_map, user_comment)
-                    st.subheader("再審査：スラッジ分析")
-                    st.markdown(east_analysis_with_comment)
-                    
-                    # ユーザーコメントを踏まえた改善案の生成
-                    improvements_with_comment = generate_improvement_suggestions_with_comment(text, east_analysis_with_comment, user_comment)
-                    st.subheader("再審査：重要な改善ポイント５選")
-                    st.markdown(improvements_with_comment)
-                    st.markdown('</div>', unsafe_allow_html=True)
-                    st.session_state['reanalysis_done'] = True
-                    st.session_state.reanalysis_triggered = False # Reset trigger
-
-            st.markdown("---")
-            # PDF出力ボタン
-            if st.session_state.get('reanalysis_done', False):
-                 st.markdown(get_pdf_print_button("再審査結果PDFレポート出力"), unsafe_allow_html=True)
-            else:
-                 st.markdown(get_pdf_print_button("PDFレポート出力"), unsafe_allow_html=True)
-
-            # セッションステートの管理
-            st.session_state.text = text
-            st.session_state.process_map = process_map
-            
-            # Reset flag if new file is uploaded
-            if 'last_uploaded_filename' not in st.session_state or st.session_state.last_uploaded_filename != uploaded_file.name:
-                st.session_state.reanalysis_done = False
-                st.session_state.reanalysis_triggered = False
-                st.session_state.user_comment = ""
-                st.session_state.last_uploaded_filename = uploaded_file.name
 
 # フッター
 st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">Powered by StepSpin 2025</div>', unsafe_allow_html=True) 
