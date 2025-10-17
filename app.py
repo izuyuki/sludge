@@ -20,7 +20,7 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 # モデルの設定
-model = genai.GenerativeModel('models/gemini-2.5-pro')
+model = genai.GenerativeModel('models/gemini-2.5-flash')
 
 # デジタル庁のデザインシステムに合わせたスタイル設定
 st.set_page_config(
@@ -326,4 +326,5 @@ if uploaded_file is not None:
 
 # フッター
 st.markdown('<div style="text-align:center; color:gray; margin-top:3em;">Powered by StepSpin 2025</div>', unsafe_allow_html=True) 
+
 
